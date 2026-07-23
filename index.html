@@ -1,0 +1,409 @@
+﻿<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TBWC Technology — Submetering & energy management distribution</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+    crossorigin="anonymous"></script>
+  <script src="image-slot.js"></script>
+</head>
+
+<body>
+  <template id="__bundler_thumbnail" data-bg-color="#0f1115">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="800" fill="#0f1115" />
+      <g transform="translate(440 280)">
+        <rect x="0" y="0" width="140" height="140" rx="14" fill="#f6f4ef" />
+        <rect x="160" y="0" width="140" height="140" rx="14" fill="#f6f4ef" />
+        <rect x="0" y="160" width="140" height="140" rx="14" fill="#f6f4ef" />
+        <rect x="160" y="160" width="140" height="140" rx="14" fill="#3b6df0" />
+      </g>
+    </svg>
+  </template>
+  <div id="site-nav"></div>
+  <script src="nav.js"></script>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">// sections.jsx — homepage sections for TBWC modernized site
+
+    function useFadeIn() {
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => {
+          if (e.isIntersecting) { el.classList.add('fade-up--visible'); obs.disconnect(); }
+        }, { threshold: 0.08, rootMargin: '0px 0px -48px 0px' });
+        obs.observe(el);
+        return () => obs.disconnect();
+      }, []);
+      return ref;
+    }
+
+    function useStagger() {
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => {
+          if (e.isIntersecting) { el.classList.add('stagger--visible'); obs.disconnect(); }
+        }, { threshold: 0.05, rootMargin: '0px 0px -32px 0px' });
+        obs.observe(el);
+        return () => obs.disconnect();
+      }, []);
+      return ref;
+    }
+
+    const Arrow = ({ size = 14 }) => (
+      <svg className="arrow" width={size} height={size} viewBox="0 0 14 14" fill="none">
+        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+
+    const ArrowDiag = ({ size = 14 }) => (
+      <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
+        <path d="M4 10L10 4M5 4h5v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+
+    // ── NAV ────────────────────────────────────────────────────────────────────
+    // ── HERO ───────────────────────────────────────────────────────────────────
+    function Hero() {
+      const gridRef = useFadeIn();
+      const [tipOpen, setTipOpen] = React.useState(false);
+      const [installTipOpen, setInstallTipOpen] = React.useState(false);
+      const headlineA = (
+        <>
+          <h1 className="display" style={{ fontSize: 'clamp(24px, 3.2vw, 70px)' }}>
+            You cannot <em style={{ color: '#03a84e' }}>manage</em> what you do not <em style={{ color: '#03a84e' }}>measure</em>.
+          </h1>
+          <p className="lede" style={{ marginTop: 32, fontSize: '1em' }}>
+            When the goal is to make the invisible visible for energy management and control purposes, putting all the pieces together can be difficult.
+          </p>
+          <p className="lede" style={{ marginTop: 12, fontSize: '1em' }}>
+            From initial design to post-installation support, TBWC provides the intelligence and the expertise to mitigate the risk and eliminate the hidden costs associated with energy management systems today.
+          </p>
+          <p className="lede" style={{ marginTop: 12, fontSize: '1em' }}>
+            TBWC takes the complex and makes it easy to deliver the vital energy information the way engineers, installers and end users need and prefer.
+          </p>
+        </>
+      );
+
+      return (
+        <section className="hero hero--fullbleed">
+          <img
+            src="hero-bg.jpg"
+            alt=""
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'right center', zIndex: 0 }}
+          />
+          {/* hero__scrim removed — showing original image */}
+          <div className="wrap" style={{ position: 'relative', zIndex: 2 }}>
+            <div className="fade-up" ref={gridRef}>
+              <div className="hero__overlay-card">
+                {headlineA}
+                <div className="hero__trust">
+                  <div><span className="mono num">25+</span><span>Years</span></div>
+                  <div><span className="mono num">27</span><span>Rep offices</span></div>
+                  <div><span className="num"><svg width="30" height="16" viewBox="0 0 38 20" style={{ borderRadius: 2, verticalAlign: 'baseline' }} xmlns="http://www.w3.org/2000/svg"><rect width="38" height="20" fill="#fff"/><g fill="#b22234"><rect width="38" height="1.54" y="0"/><rect width="38" height="1.54" y="3.08"/><rect width="38" height="1.54" y="6.15"/><rect width="38" height="1.54" y="9.23"/><rect width="38" height="1.54" y="12.31"/><rect width="38" height="1.54" y="15.38"/><rect width="38" height="1.54" y="18.46"/></g><rect width="15.2" height="10.77" fill="#3c3b6e"/></svg></span><span>BAA, TAA, BABA compliant</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ── LOCATIONS ─────────────────────────────────────────────────────────────
+    function Locations() {
+      const secHdRef = useFadeIn();
+      const vmRef = useStagger();
+      const locsRef = useStagger();
+      return (
+        <section id="about" className="row">
+          <div className="wrap">
+            <div className="sec-hd fade-up" ref={secHdRef}>
+              <div className="sec-hd__label">
+                <span><span className="sec-hd__num">-</span> · About TBWC</span>
+                <span>Vision &amp; mission</span>
+              </div>
+              <div>
+                <h2 className="h2 sec-hd__title">Practical solutions,<br />delivered through people.</h2>
+                <p className="sec-hd__sub">Corporate ops out of Las Vegas, hands-on service center in Ontario, California. Both staffed by the people who actually answer your email.</p>
+              </div>
+            </div>
+
+            <div className="vm stagger" ref={vmRef}>
+              <article className="vm__card">
+                <span className="vm__kicker mono">Our Vision</span>
+                <p className="vm__body">
+                  The TBWC Inc. vision is to create green job opportunities through education.
+                  To provide the support, training, and expertise that is necessary to mitigate
+                  risk and deliver practical solutions for facility managers and owners today.
+                </p>
+              </article>
+              <article className="vm__card vm__card--dark">
+                <span className="vm__kicker mono">Mission Statement</span>
+                <p className="vm__body">
+                  The mission of TBWC Inc. is to provide technical product application and sales
+                  consulting services at no additional cost to commercial and industrial end-users,
+                  through a network of professional electrical, lighting, automation-control
+                  distributors and contractors throughout the United States.
+                </p>
+              </article>
+            </div>
+
+            <div className="ab-prose">
+              <div className="ab-prose__col">
+                <span className="ab-prose__stat mono">500<span className="ab-prose__stat-plus">+</span></span>
+                <span className="ab-prose__stat-label mono">SKUs in line card</span>
+              </div>
+              <div className="ab-prose__col ab-prose__col--body">
+                <p className="ab-prose__lead">
+                  TBWC provides our Distributors a one-stop shop for essential and peripheral
+                  products needed for a submetering / energy management system installation —
+                  including the items many times forgotten. We also support submeter users and
+                  installers with pre- and post-installation services to ensure every submeter
+                  purchased delivers the accurate, reliable data they need:
+                </p>
+                <ul className="ab-prose__list">
+                  <li>
+                    <span className="ab-prose__list-k mono">-</span>
+                    <div>
+                      <strong>Retro-commissioning</strong>
+                      <span> — annual meter / submeter system wellness check-ups.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="ab-prose__list-k mono">-</span>
+                    <div>
+                      <strong>AMR system upgrades</strong>
+                      <span> — Automatic Meter Reading updates and 3rd-party service agreements.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="ab-prose__list-k mono">-</span>
+                    <div>
+                      <strong>Custom dashboards</strong>
+                      <span> — load segregation, energy management, Net Zero projects, and more.</span>
+                    </div>
+                  </li>
+                </ul>
+                <p className="ab-prose__body">
+                  Represented by qualified agencies across North America, TBWC Manufacturer's
+                  Reps have been providing technical product support, application assistance and
+                  local expertise for decades. Together with our contractor / installation and
+                  distribution partners, we work to ensure every submeter project is delivered on
+                  time, installed within scope, and meets the original budget — above all,
+                  exceeding your end-user customers' expectations.
+                </p>
+              </div>
+            </div>
+
+            <div className="locs stagger" ref={locsRef}>
+              <article className="loc">
+                <div className="loc__hd">
+                  <span className="loc__type">Corporate · NV</span>
+                </div>
+                <h3 className="loc__title">TBWC Technology, Inc.</h3>
+                <address className="loc__addr">
+                  <strong>Corporate Mailing</strong><br />
+                  6130 W Flamingo Rd, Unit #256<br />
+                  Las Vegas, NV 89103-2280
+                </address>
+              </article>
+
+              <article className="loc">
+                <div className="loc__hd">
+                  <span className="loc__type">Service Center · CA</span>
+                </div>
+                <h3 className="loc__title">TBWC Service Center</h3>
+                <address className="loc__addr">
+                  <strong>Bench &amp; RMA</strong><br />
+                  2591 Lindsay Privado Dr.<br />
+                  Ontario, CA 91761<br />
+                  <span className="mono" style={{ fontSize: 13 }}>(888) 562-1810</span>
+                </address>
+              </article>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+
+    // ── FOOTER ────────────────────────────────────────────────────────────────
+    function Footer() {
+      return (
+        <footer className="foot">
+          <div className="wrap">
+            <div className="foot__grid">
+              <div className="foot__col foot__brand">
+                <a href="#" className="brand">
+                  <img src="TBWC%20Technology%20Logo%20.png" alt="TBWC Technology" className="brand__logo-img" />
+                </a>
+                <p className="foot__tag">TBWC Technology with precision since 2002.</p>
+              </div>
+              <div className="foot__col">
+                <h4>Support</h4>
+                <ul>
+                  <li><a href="https://tbwctechnology.com/tech-support/" target="_blank" rel="noopener noreferrer">Technical support</a></li>
+                  <li><a href="#">RMAs</a></li>
+                  <li><a href="#">Documentation</a></li>
+                  <li><a href="#">.......</a></li>
+                </ul>
+              </div>
+              <div className="foot__col">
+                <h4>Reps</h4>
+                <ul>
+                  <li><a href="#reps">Become a rep</a></li>
+                  <li><a href="#">Rep Portal</a></li>
+                  <li><a href="#">Territory map</a></li>
+                  <li><a href="#">......</a></li>
+                </ul>
+              </div>
+              <div className="foot__col">
+                <h4>Company</h4>
+                <ul>
+                  <li><a href="#about">About</a></li>
+                  <li><a href="#footer-contact">Contact</a></li>
+                  <li><a href="#">New customer</a></li>
+                  <li><a href="#">Careers</a></li>
+                </ul>
+              </div>
+              <div className="foot__col" id="footer-contact">
+                <h4>Contact Us</h4>
+                <ul>
+                  <li>
+                    <a href="tel:8885621810" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.6 4.9 2 2 0 0 1 3.58 2.72h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.28a16 16 0 0 0 6.13 6.13l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      (888) 562-1810
+                    </a>
+                  </li>
+                  <li>
+                    <a href="mailto:info@TBWCinc.com" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      info@TBWCinc.com
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="foot__bot">
+              <span>© 2026 TBWC TECHNOLOGY, INC. · ALL RIGHTS RESERVED.</span>
+              <span>LAS VEGAS, NV · ONTARIO, CA</span>
+            </div>
+          </div>
+        </footer>
+      );
+    }
+
+
+    // ── Applications ───────────────────────────────────────────────────────────
+    function Applications() {
+      const gridRef = useFadeIn();
+
+      const headlineA = (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <h2 className="h2" style={{ fontSize: 'clamp(15px, 1.4vw, 32px)', fontWeight: 700, marginBottom: 10 }}>
+                Whether for <em style={{ color: '#03a84e', fontStyle: 'italic' }}>cost</em> allocation, LEED energy <em style={{ color: '#03a84e', fontStyle: 'italic' }}>awareness,</em> or for code <em style={{ color: '#03a84e', fontStyle: 'italic' }}>compliance</em>&hellip;
+              </h2>
+              <p style={{ maxWidth: '66ch', lineHeight: 1.65 }}>
+                &hellip;TBWC has transformed the process of &lsquo;buying a meter&rsquo; to deliver the energy intelligence ecosystem that transforms complex metering and monitoring requirements into the reliable, scalable solution that&rsquo;s easier to install, own and manage over the life of the building.
+              </p>
+            </div>
+            <div>
+              <h2 className="h2" style={{ fontSize: 'clamp(15px, 1.4vw, 32px)', fontWeight: 700, marginBottom: 10 }}>
+                Meter it, <em style={{ color: '#03a84e', fontStyle: 'italic' }}>MeterIT&trade;,</em> Manage it. TBWC delivers <em style={{ color: '#03a84e', fontStyle: 'italic' }}>more than a meter</em>.
+              </h2>
+              <p style={{ maxWidth: '66ch', lineHeight: 1.65 }}>
+                We deliver MeterIT&trade;&mdash;the engineered combination of advanced metering, information technology, and energy intelligence that powers smarter buildings. Whether you are an electrical distributor, contractor, engineer, building owner, OEM, or specifying professional, TBWC is committed to delivering the expertise, solutions, and long-term support your project deserves.
+              </p>
+            </div>
+          </div>
+        </>
+      );
+
+      return (
+        <section id="applications" className="hero">
+          <div className="wrap" style={{ display: 'flex', gap: 'clamp(24px, 3vw, 56px)', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="fade-up" ref={gridRef} style={{ flex: '1 1 420px', minWidth: 0 }}>
+              <div style={{ color: '#000' }}>
+                {headlineA}
+              </div>
+            </div>
+            <div style={{ flex: '1 1 420px', minWidth: 0 }}>
+              <img
+                src="applications.jpg"
+                alt=""
+                style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block' }}
+              />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    Object.assign(window, { Hero, Locations, Footer, Applications });
+  </script>
+  <script type="text/babel" data-presets="react">
+
+    const ACCENT = '#2A6FDB';
+    const FONT = { sans: '"Geist"', mono: '"Geist Mono"', serif: '"Instrument Serif"' };
+
+    function App() {
+      React.useEffect(() => {
+        const root = document.documentElement;
+        root.dataset.theme = 'light';
+        root.dataset.density = 'regular';
+        root.style.setProperty('--accent', ACCENT);
+        root.style.setProperty('--accent-ink', '#fff');
+        root.style.setProperty('--f-sans',  `${FONT.sans}, ui-sans-serif, system-ui, sans-serif`);
+        root.style.setProperty('--f-mono',  `${FONT.mono}, ui-monospace, SFMono-Regular, monospace`);
+        root.style.setProperty('--f-serif', `${FONT.serif}, Georgia, serif`);
+      }, []);
+
+      React.useEffect(() => {
+        const els = document.querySelectorAll('.reveal');
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+          });
+        }, { rootMargin: '-50px 0px -50px 0px' });
+        els.forEach((el) => io.observe(el));
+        return () => io.disconnect();
+      });
+
+      return (
+        <>
+          <main>
+            <Hero />
+            <div className="reveal"><Applications /></div>
+            <div className="reveal"><Locations /></div>
+          </main>
+          <Footer />
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>

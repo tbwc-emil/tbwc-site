@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TBWC — Logo Explorations</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: oklch(18% 0.01 260);
+    --ink-2: oklch(38% 0.01 260);
+    --ink-3: oklch(58% 0.008 260);
+    --rule: oklch(88% 0.006 260);
+    --bg: oklch(98.5% 0.004 95);
+    --bg-2: oklch(96.2% 0.005 95);
+    --accent: oklch(56% 0.20 258);
+    --f-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+    --f-mono: "Geist Mono", ui-monospace, monospace;
+    --f-serif: "Instrument Serif", Georgia, serif;
+  }
+  body { margin: 0; font-family: var(--f-sans); background: var(--bg); color: var(--ink); }
+  .kicker {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 500;
+  }
+  .num { color: var(--accent); }
+  .lab-card {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    padding: 0;
+    overflow: hidden;
+  }
+  .lab-stage {
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px;
+    position: relative;
+  }
+  .lab-stage--dark { background: var(--ink); }
+  .lab-stage--dark * { color: var(--bg) !important; fill: currentColor; }
+  .lab-stage--dark .accent-fill { color: oklch(70% 0.18 258) !important; fill: currentColor !important; }
+  .lab-stage::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, var(--rule) 0.5px, transparent 0.5px),
+      linear-gradient(to bottom, var(--rule) 0.5px, transparent 0.5px);
+    background-size: 32px 32px;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .lab-stage--dark::after {
+    background-image:
+      linear-gradient(to right, oklch(28% 0.008 260) 0.5px, transparent 0.5px),
+      linear-gradient(to bottom, oklch(28% 0.008 260) 0.5px, transparent 0.5px);
+  }
+  .lab-mini {
+    border-top: 0.5px solid var(--rule);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--bg-2);
+  }
+  .lab-mini > div {
+    padding: 14px 16px;
+    border-right: 0.5px solid var(--rule);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 48px;
+    overflow: hidden;
+  }
+  .lab-mini > div:last-child { border-right: 0; }
+  .lab-mini--inline { background: var(--ink); }
+  .lab-mini--inline > div { color: var(--bg); }
+  .lab-meta {
+    border-top: 0.5px solid var(--rule);
+    padding: 16px 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .lab-meta__title {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .lab-meta__desc {
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  /* ─── Logo 01: Wordmark · monoline ───────────────────────────────── */
+  .l01-wordmark {
+    font-family: var(--f-sans);
+    font-weight: 600;
+    font-size: 96px;
+    letter-spacing: -0.05em;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .l01-wordmark .dot { color: var(--accent); }
+  .l01-wordmark .sub {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+
+  /* ─── Logo 02: Mark + wordmark ───────────────────────────────────── */
+  .l02 { display: inline-flex; align-items: center; gap: 22px; }
+  .l02-mark { width: 84px; height: 84px; }
+  .l02-text {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .l02-text .top {
+    font-size: 56px; font-weight: 600;
+    letter-spacing: -0.04em; line-height: 0.9;
+  }
+  .l02-text .bot {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ─── Logo 03: Stacked monogram ─────────────────────────────────── */
+  .l03 {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    gap: 0 8px;
+    align-items: center;
+  }
+  .l03-stack {
+    display: grid;
+    grid-template-columns: repeat(2, 56px);
+    grid-template-rows: repeat(2, 56px);
+    gap: 4px;
+  }
+  .l03-stack > span {
+    background: var(--ink);
+    color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: -0.04em;
+    border-radius: 4px;
+  }
+  .l03-stack > span.accent {
+    background: var(--accent);
+  }
+  .l03-text {
+    display: flex; flex-direction: column;
+    margin-left: 14px;
+  }
+  .l03-text .top, .l03-text .bot {
+    font-family: var(--f-mono);
+    font-size: 14px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  .l03-text .bot {
+    color: var(--ink-3);
+  }
+
+  /* ─── Logo 04: Bracketed wordmark ───────────────────────────────── */
+  .l04 {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+    font-family: var(--f-sans);
+    font-weight: 500;
+    font-size: 88px;
+    letter-spacing: -0.05em;
+    color: var(--ink);
+    line-height: 0.9;
+  }
+  .l04 .bracket {
+    display: flex; flex-direction: column; justify-content: space-between;
+    width: 18px;
+    padding: 4px 0;
+  }
+  .l04 .bracket span {
+    height: 2px; background: var(--accent);
+  }
+  .l04 .bracket span:first-child,
+  .l04 .bracket span:last-child {
+    width: 100%;
+  }
+  .l04 .bracket-mid {
+    flex: 1;
+    width: 2px;
+    background: var(--accent);
+    margin-left: 0;
+  }
+  .l04-l, .l04-r {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+  }
+  .l04-l { align-items: flex-start; }
+  .l04-r { align-items: flex-end; }
+  .l04-l span, .l04-r span {
+    width: 14px; height: 2px; background: var(--accent);
+  }
+  .l04-text { padding: 0 18px; }
+
+  /* ─── Logo 05: Pill / signal ─────────────────────────────────────── */
+  .l05 {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    padding: 8px 8px 8px 22px;
+    gap: 18px;
+  }
+  .l05-text {
+    font-weight: 600;
+    font-size: 38px;
+    letter-spacing: -0.045em;
+    color: var(--ink);
+  }
+  .l05-pill {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* ─── Logo 06: Industrial · serif ───────────────────────────────── */
+  .l06 {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .l06-row {
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  .l06-mark {
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 96px;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+    color: var(--ink);
+  }
+  .l06-mark sup {
+    font-family: var(--f-mono);
+    font-style: normal;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    vertical-align: top;
+    margin-left: 8px;
+  }
+  .l06-rule {
+    width: 100%;
+    height: 1px;
+    background: var(--ink);
+    margin: 8px 0 6px;
+  }
+  .l06-tag {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  /* ─── Mini logos for scale check ─────────────────────────────────── */
+  .mini-l01 {
+    font-family: var(--f-sans); font-weight: 600;
+    font-size: 18px; letter-spacing: -0.04em; color: inherit;
+  }
+  .mini-l01 .dot { color: var(--accent); }
+  .mini-l02 { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-sans); font-weight: 600; font-size: 16px; letter-spacing: -0.04em; }
+  .mini-l02 svg { width: 18px; height: 18px; }
+  .mini-favicon {
+    width: 24px; height: 24px;
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 11px; letter-spacing: -0.04em;
+  }
+  .mini-favicon.accent { background: var(--accent); color: #fff; }
+
+  /* ─── Page chrome ────────────────────────────────────────────────── */
+  .page-hd {
+    padding: 48px clamp(24px, 4vw, 56px) 32px;
+    border-bottom: 0.5px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .page-hd h1 {
+    font-size: clamp(36px, 5vw, 64px);
+    letter-spacing: -0.028em;
+    font-weight: 480;
+    margin: 12px 0 0;
+    line-height: 1;
+  }
+  .page-hd em {
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+  .page-hd p {
+    color: var(--ink-2);
+    max-width: 56ch;
+    line-height: 1.5;
+    margin: 12px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<header class="page-hd">
+  <div>
+    <div class="kicker"><span class="num">●</span> &nbsp; TBWC · Identity exploration</div>
+    <h1>Six logo<br>directions, <em>one mark</em><br>to choose.</h1>
+  </div>
+  <p>A spread across the wordmark/monogram/pictorial spectrum. Each holds at the favicon scale and against an inverted ground. Pick a direction (or mix two) and we'll refine.</p>
+</header>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+function LogoCard({ stage, miniLight, miniDark, favLight, favDark, title, desc, dark }) {
+  return (
+    <div className="lab-card">
+      <div className={dark ? "lab-stage lab-stage--dark" : "lab-stage"}>{stage}</div>
+      <div className={"lab-mini" + (dark ? " lab-mini--inline" : "")}>
+        <div>{dark ? miniDark : miniLight}</div>
+        <div>{favLight}</div>
+        <div>{favDark}</div>
+      </div>
+      <div className="lab-meta">
+        <div className="lab-meta__title">{title}</div>
+        <div className="lab-meta__desc">{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Logo 01: Tight monoline wordmark ────────────────────────────────
+const Logo01 = ({ dark }) => (
+  <LogoCard
+    title="01 · Monoline wordmark"
+    desc="The simplest, most flexible move: a tightly-kerned Geist 600 wordmark with a single accent dot replacing the period in `tbwc.` Reads as a domain, sets up nicely with `Technology` as a mono lockup."
+    dark={dark}
+    stage={
+      <div className="l01-wordmark">
+        <span>tbwc<span className="dot accent-fill">.</span></span>
+        <span className="sub">Technology</span>
+      </div>
+    }
+    miniLight={<span className="mini-l01">tbwc<span className="dot">.</span></span>}
+    miniDark={<span className="mini-l01" style={{ color: 'var(--bg)' }}>tbwc<span className="dot">.</span></span>}
+    favLight={<span className="mini-favicon">tb<span style={{ color: 'oklch(70% 0.18 258)' }}>.</span></span>}
+    favDark={<span className="mini-favicon accent">tb.</span>}
+  />
+);
+
+// ─── Logo 02: Mark + wordmark · concentric signal ────────────────────
+const Logo02Mark = () => (
+  <svg viewBox="0 0 84 84" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="80" height="80" rx="14" fill="currentColor" className="" stroke="none"/>
+    <g transform="translate(42 42)">
+      <circle r="22" fill="none" stroke="var(--bg)" strokeWidth="1.5" opacity="0.35"/>
+      <circle r="14" fill="none" stroke="var(--bg)" strokeWidth="1.5" opacity="0.6"/>
+      <circle r="6" fill="var(--bg)"/>
+      <line x1="-30" y1="0" x2="30" y2="0" stroke="var(--bg)" strokeWidth="1" opacity="0.25"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke="var(--bg)" strokeWidth="1" opacity="0.25"/>
+    </g>
+  </svg>
+);
+const Logo02 = ({ dark }) => (
+  <LogoCard
+    title="02 · Concentric signal mark"
+    desc="A glyph that reads as a target / signal / hub of distribution — concentric rings with a solid core. Pairs with a strong sans wordmark. The mark works alone as an avatar/app icon."
+    dark={dark}
+    stage={
+      <div className="l02">
+        <span className="l02-mark" style={{ color: dark ? 'var(--accent)' : 'var(--ink)' }}>
+          <Logo02Mark/>
+        </span>
+        <div className="l02-text">
+          <span className="top">TBWC</span>
+          <span className="bot">Technology</span>
+        </div>
+      </div>
+    }
+    miniLight={<span className="mini-l02"><svg viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="var(--ink)"/><circle cx="12" cy="12" r="6" fill="none" stroke="var(--bg)" strokeWidth="1"/><circle cx="12" cy="12" r="2.5" fill="var(--bg)"/></svg>TBWC</span>}
+    miniDark={<span className="mini-l02" style={{ color: 'var(--bg)' }}><svg viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="oklch(70% 0.18 258)"/><circle cx="12" cy="12" r="6" fill="none" stroke="var(--bg)" strokeWidth="1"/><circle cx="12" cy="12" r="2.5" fill="var(--bg)"/></svg>TBWC</span>}
+    favLight={<svg width="28" height="28" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="var(--ink)"/><circle cx="12" cy="12" r="6" fill="none" stroke="var(--bg)" strokeWidth="1.2"/><circle cx="12" cy="12" r="2.5" fill="var(--bg)"/></svg>}
+    favDark={<svg width="28" height="28" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="var(--accent)"/><circle cx="12" cy="12" r="6" fill="none" stroke="#fff" strokeWidth="1.2"/><circle cx="12" cy="12" r="2.5" fill="#fff"/></svg>}
+  />
+);
+
+// ─── Logo 03: Stacked 2×2 monogram ───────────────────────────────────
+const Logo03 = ({ dark }) => (
+  <LogoCard
+    title="03 · Quadrant monogram"
+    desc="Each letter in its own square — a literal ` grid` metaphor. The C tile flips to accent. Lockup pairs the grid with an italic serif `Technology` for editorial contrast."
+    dark={dark}
+    stage={
+      <div className="l03">
+        <div className="l03-stack">
+          <span style={dark ? { background: 'var(--bg)', color: 'var(--ink)' } : null}>T</span>
+          <span style={dark ? { background: 'var(--bg)', color: 'var(--ink)' } : null}>B</span>
+          <span style={dark ? { background: 'var(--bg)', color: 'var(--ink)' } : null}>W</span>
+          <span className="accent accent-fill" style={{ background: 'var(--accent)', color: '#fff' }}>C</span>
+        </div>
+        <div className="l03-text">
+          <span className="top" style={dark ? { color: 'var(--bg)' } : null}>Technology</span>
+        </div>
+      </div>
+    }
+    miniLight={
+      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 16 }}>
+        <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, width: 18, height: 18 }}>
+          <span style={{ background: 'var(--ink)' }}/>
+          <span style={{ background: 'var(--ink)' }}/>
+          <span style={{ background: 'var(--ink)' }}/>
+          <span style={{ background: 'var(--accent)' }}/>
+        </span>
+        Technology
+      </span>
+    }
+    miniDark={
+      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--bg)' }}>
+        <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, width: 18, height: 18 }}>
+          <span style={{ background: 'var(--bg)' }}/>
+          <span style={{ background: 'var(--bg)' }}/>
+          <span style={{ background: 'var(--bg)' }}/>
+          <span style={{ background: 'oklch(70% 0.18 258)' }}/>
+        </span>
+        Technology
+      </span>
+    }
+    favLight={
+      <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, width: 24, height: 24 }}>
+        <span style={{ background: 'var(--ink)', borderRadius: 1 }}/>
+        <span style={{ background: 'var(--ink)', borderRadius: 1 }}/>
+        <span style={{ background: 'var(--ink)', borderRadius: 1 }}/>
+        <span style={{ background: 'var(--accent)', borderRadius: 1 }}/>
+      </span>
+    }
+    favDark={
+      <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, width: 24, height: 24 }}>
+        <span style={{ background: 'var(--accent)', borderRadius: 1 }}/>
+        <span style={{ background: 'var(--accent)', borderRadius: 1 }}/>
+        <span style={{ background: 'var(--accent)', borderRadius: 1 }}/>
+        <span style={{ background: '#fff', borderRadius: 1 }}/>
+      </span>
+    }
+  />
+);
+
+// ─── Logo 04: Bracketed industrial wordmark ──────────────────────────
+const Logo04 = ({ dark }) => (
+  <LogoCard
+    title="04 · Bracketed wordmark"
+    desc="Engineering schematic energy — the wordmark held inside thin horizontal rules at top + bottom, cap-and-tail brackets at each end. Reads like a part number on a datasheet."
+    dark={dark}
+    stage={
+      <div className="l04" style={dark ? { color: 'var(--bg)' } : null}>
+        <div className="l04-l">
+          <span/>
+          <span/>
+        </div>
+        <div className="l04-text">TBWC</div>
+        <div className="l04-r">
+          <span/>
+          <span/>
+        </div>
+      </div>
+    }
+    miniLight={
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500, fontSize: 16, letterSpacing: '-0.04em' }}>
+        <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 12 }}>
+          <span style={{ width: 6, height: 1, background: 'var(--accent)' }}/>
+          <span style={{ width: 6, height: 1, background: 'var(--accent)' }}/>
+        </span>
+        TBWC
+        <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
+          <span style={{ width: 6, height: 1, background: 'var(--accent)' }}/>
+          <span style={{ width: 6, height: 1, background: 'var(--accent)' }}/>
+        </span>
+      </span>
+    }
+    miniDark={
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500, fontSize: 16, letterSpacing: '-0.04em', color: 'var(--bg)' }}>
+        <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 12 }}>
+          <span style={{ width: 6, height: 1, background: 'oklch(70% 0.18 258)' }}/>
+          <span style={{ width: 6, height: 1, background: 'oklch(70% 0.18 258)' }}/>
+        </span>
+        TBWC
+        <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
+          <span style={{ width: 6, height: 1, background: 'oklch(70% 0.18 258)' }}/>
+          <span style={{ width: 6, height: 1, background: 'oklch(70% 0.18 258)' }}/>
+        </span>
+      </span>
+    }
+    favLight={
+      <svg width="24" height="24" viewBox="0 0 24 24">
+        <rect x="0.5" y="0.5" width="23" height="23" fill="var(--bg)" stroke="var(--ink)" strokeWidth="1"/>
+        <text x="12" y="16" textAnchor="middle" fontFamily="Geist" fontSize="11" fontWeight="600" letterSpacing="-0.04em" fill="var(--ink)">TBWC</text>
+      </svg>
+    }
+    favDark={
+      <svg width="24" height="24" viewBox="0 0 24 24">
+        <rect x="0.5" y="0.5" width="23" height="23" fill="var(--accent)" stroke="var(--accent)"/>
+        <text x="12" y="16" textAnchor="middle" fontFamily="Geist" fontSize="11" fontWeight="600" letterSpacing="-0.04em" fill="#fff">TBWC</text>
+      </svg>
+    }
+  />
+);
+
+// ─── Logo 05: Pill / dual-tone ───────────────────────────────────────
+const Logo05 = ({ dark }) => (
+  <LogoCard
+    title="05 · Pill lockup"
+    desc="A two-tone pill that reads as both `wordmark` + `category tag`. The right pill flexes — `Technology`, `Rep Portal` — letting the lockup re-skin per surface (footer, portal, sub-brand)."
+    dark={dark}
+    stage={
+      <div className="l05" style={dark ? { borderColor: 'var(--bg)' } : null}>
+        <span className="l05-text" style={dark ? { color: 'var(--bg)' } : null}>TBWC</span>
+        <span className="l05-pill accent-fill" style={dark ? { background: 'oklch(70% 0.18 258)' } : null}>Technology</span>
+      </div>
+    }
+    miniLight={
+      <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 999, border: '1px solid var(--ink)', padding: '2px 2px 2px 8px', gap: 6, fontWeight: 600, fontSize: 12, letterSpacing: '-0.03em' }}>
+        TBWC
+        <span style={{ background: 'var(--accent)', color: '#fff', padding: '3px 7px', borderRadius: 999, fontFamily: 'var(--f-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Tech</span>
+      </span>
+    }
+    miniDark={
+      <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 999, border: '1px solid var(--bg)', padding: '2px 2px 2px 8px', gap: 6, fontWeight: 600, fontSize: 12, letterSpacing: '-0.03em', color: 'var(--bg)' }}>
+        TBWC
+        <span style={{ background: 'oklch(70% 0.18 258)', color: '#fff', padding: '3px 7px', borderRadius: 999, fontFamily: 'var(--f-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Tech</span>
+      </span>
+    }
+    favLight={
+      <svg width="32" height="20" viewBox="0 0 32 20">
+        <rect x="0.5" y="0.5" width="31" height="19" rx="9.5" fill="none" stroke="var(--ink)"/>
+        <rect x="16" y="2" width="14" height="16" rx="8" fill="var(--accent)"/>
+        <text x="8" y="13" textAnchor="middle" fontFamily="Geist" fontSize="8" fontWeight="600" letterSpacing="-0.04em" fill="var(--ink)">TB</text>
+        <text x="23" y="13" textAnchor="middle" fontFamily="Geist Mono" fontSize="6" fontWeight="500" fill="#fff">T</text>
+      </svg>
+    }
+    favDark={
+      <span className="mini-favicon accent">T</span>
+    }
+  />
+);
+
+// ─── Logo 06: Editorial · serif & rule ───────────────────────────────
+const Logo06 = ({ dark }) => (
+  <LogoCard
+    title="06 · Editorial mark"
+    desc="A premium, almost masthead-like treatment — italic Instrument Serif headline with a mono superscript date stamp + a hairline rule and category label below. Best for the boutique-distribution direction."
+    dark={dark}
+    stage={
+      <div className="l06" style={dark ? { color: 'var(--bg)' } : null}>
+        <div className="l06-row">
+          <span className="l06-mark" style={dark ? { color: 'var(--bg)' } : null}>
+            tbwc<sup className="accent-fill">est. 2002</sup>
+          </span>
+        </div>
+        <div className="l06-rule" style={dark ? { background: 'var(--bg)' } : null}/>
+        <div className="l06-tag" style={dark ? { color: 'var(--bg)' } : null}>
+          <span>Technology</span>
+        </div>
+      </div>
+    }
+    miniLight={
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 18, lineHeight: 1, color: 'var(--ink)' }}>tbwc</span>
+        <span style={{ height: 1, background: 'var(--ink)' }}/>
+        <span style={{ fontFamily: 'var(--f-mono)', fontSize: 7, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>technology</span>
+      </span>
+    }
+    miniDark={
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontFamily: 'var(--f-serif)', fontStyle: 'italic', fontSize: 18, lineHeight: 1, color: 'var(--bg)' }}>tbwc</span>
+        <span style={{ height: 1, background: 'var(--bg)' }}/>
+        <span style={{ fontFamily: 'var(--f-mono)', fontSize: 7, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--bg)' }}>technology</span>
+      </span>
+    }
+    favLight={
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <text x="14" y="17" textAnchor="middle" fontFamily="Instrument Serif" fontStyle="italic" fontSize="18" fill="var(--ink)">tbwc</text>
+        <line x1="4" y1="22" x2="24" y2="22" stroke="var(--accent)" strokeWidth="1"/>
+      </svg>
+    }
+    favDark={
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <rect width="28" height="28" rx="4" fill="var(--ink)"/>
+        <text x="14" y="17" textAnchor="middle" fontFamily="Instrument Serif" fontStyle="italic" fontSize="18" fill="var(--bg)">tbwc</text>
+        <line x1="4" y1="22" x2="24" y2="22" stroke="var(--accent)" strokeWidth="1"/>
+      </svg>
+    }
+  />
+);
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="primary" title="Primary marks" subtitle="Each shown on light + dark, with a small lockup and two favicon treatments below for scale check.">
+        <DCArtboard id="l01-l" label="01 · Monoline" width={520} height={520}>
+          <Logo01 dark={false}/>
+        </DCArtboard>
+        <DCArtboard id="l01-d" label="01 · Monoline · dark" width={520} height={520}>
+          <Logo01 dark={true}/>
+        </DCArtboard>
+        <DCArtboard id="l02-l" label="02 · Concentric" width={520} height={520}>
+          <Logo02 dark={false}/>
+        </DCArtboard>
+        <DCArtboard id="l02-d" label="02 · Concentric · dark" width={520} height={520}>
+          <Logo02 dark={true}/>
+        </DCArtboard>
+        <DCArtboard id="l03-l" label="03 · Quadrant" width={520} height={520}>
+          <Logo03 dark={false}/>
+        </DCArtboard>
+        <DCArtboard id="l03-d" label="03 · Quadrant · dark" width={520} height={520}>
+          <Logo03 dark={true}/>
+        </DCArtboard>
+      </DCSection>
+      <DCSection id="secondary" title="Alternative directions" subtitle="More opinionated treatments — bracketed schematic, dual-tone pill, and editorial serif mark.">
+        <DCArtboard id="l04-l" label="04 · Bracketed" width={520} height={520}>
+          <Logo04 dark={false}/>
+        </DCArtboard>
+        <DCArtboard id="l04-d" label="04 · Bracketed · dark" width={520} height={520}>
+          <Logo04 dark={true}/>
+        </DCArtboard>
+        <DCArtboard id="l05-l" label="05 · Pill lockup" width={520} height={520}>
+          <Logo05 dark={false}/>
+        </DCArtboard>
+        <DCArtboard id="l05-d" label="05 · Pill lockup · dark" width={520} height={520}>
+          <Logo05 dark={true}/>
+        </DCArtboard>
+        <DCArtboard id="l06-l" label="06 · Editorial" width={520} height={520}>
+          <Logo06 dark={false}/>
+        </DCArtboard>
+        <DCArtboard id="l06-d" label="06 · Editorial · dark" width={520} height={520}>
+          <Logo06 dark={true}/>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Representatives — TBWC Technology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="site-nav"></div>
+  <script src="nav.js"></script>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+
+    // ── Hooks ──────────────────────────────────────────────────────────────────
+
+    function useFadeIn() {
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => {
+          if (e.isIntersecting) { el.classList.add('fade-up--visible'); obs.disconnect(); }
+        }, { threshold: 0.08, rootMargin: '0px 0px -48px 0px' });
+        obs.observe(el);
+        return () => obs.disconnect();
+      }, []);
+      return ref;
+    }
+
+    function useStagger() {
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => {
+          if (e.isIntersecting) { el.classList.add('stagger--visible'); obs.disconnect(); }
+        }, { threshold: 0.05, rootMargin: '0px 0px -32px 0px' });
+        obs.observe(el);
+        return () => obs.disconnect();
+      }, []);
+      return ref;
+    }
+
+    const Arrow = ({ size = 14 }) => (
+      <svg className="arrow" width={size} height={size} viewBox="0 0 14 14" fill="none">
+        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+
+    const ArrowDiag = ({ size = 14 }) => (
+      <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
+        <path d="M4 10L10 4M5 4h5v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+
+    // ── NAV ────────────────────────────────────────────────────────────────────
+
+
+    // ── FOOTER ────────────────────────────────────────────────────────────────
+
+    function Footer() {
+      return (
+        <footer className="foot">
+          <div className="wrap">
+            <div className="foot__grid">
+              <div className="foot__col foot__brand">
+                <a href="index.html" className="brand">
+                  <img src="TBWC%20Technology%20Logo%20.png" alt="TBWC Technology" className="brand__logo-img" />
+                </a>
+                <p className="foot__tag">TTBWC Technology with precision since 2002.</p>
+              </div>
+              <div className="foot__col">
+                <h4>Support</h4>
+                <ul>
+                  <li><a href="https://tbwctechnology.com/tech-support/" target="_blank" rel="noopener noreferrer">Technical support</a></li>
+                  <li><a href="#">RMAs</a></li>
+                  <li><a href="#">Documentation</a></li>
+                  <li><a href="#">.......</a></li>
+                </ul>
+              </div>
+              <div className="foot__col">
+                <h4>Reps</h4>
+                <ul>
+                  <li><a href="#reps">Become a rep</a></li>
+                  <li><a href="#">Rep Portal</a></li>
+                  <li><a href="#">Territory map</a></li>
+                  <li><a href="#">......</a></li>
+                </ul>
+              </div>
+              <div className="foot__col">
+                <h4>Company</h4>
+                <ul>
+                  <li><a href="index.html#about">About</a></li>
+                  <li><a href="index.html#footer-contact">Contact</a></li>
+                  <li><a href="#">New customer</a></li>
+                  <li><a href="#">Careers</a></li>
+                </ul>
+              </div>
+              <div className="foot__col" id="footer-contact">
+                <h4>Contact Us</h4>
+                <ul>
+                  <li>
+                    <a href="tel:8885621810" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.6 4.9 2 2 0 0 1 3.58 2.72h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.28a16 16 0 0 0 6.13 6.13l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      (888) 562-1810
+                    </a>
+                  </li>
+                  <li>
+                    <a href="mailto:info@TBWCinc.com" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      info@TBWCinc.com
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="foot__bot">
+              <span>© 2026 TBWC TECHNOLOGY, INC. · ALL RIGHTS RESERVED.</span>
+              <span>LAS VEGAS, NV · ONTARIO, CA</span>
+            </div>
+          </div>
+        </footer>
+      );
+    }
+
+    // ── REPRESENTATIVES ────────────────────────────────────────────────────────
+
+    const AGENCIES = [
+      { id: 'usnw', name: 'Unified Solutions NW', contact: 'Kevin Adams', phone: '(503) 624-8293', region: 'Pacific Northwest', territories: 'WA · OR · ID · MT · AK', states: ['WA', 'OR', 'ID', 'MT', 'AK'], logo: 'https://tbwctechnology.com/wp-content/uploads/USNW.png', url: 'https://www.usxnw.com/' },
+      { id: 'dz', name: 'D.Z. Cook', contact: 'Steve Mobley', phone: '(510) 293-6810', region: 'Pacific', territories: 'Northern California · Northern Nevada', states: ['CA', 'NV'], logo: 'https://tbwctechnology.com/wp-content/uploads/DZ-e1710094110554-1024x315.png', url: 'https://dzcook.com/' },
+      { id: 'ba', name: 'Blanchard Associates', contact: 'James Blanchard', phone: '(909) 974-0111', region: 'Pacific', territories: 'Southern CA · Southern NV · HI · AZ', states: ['CA', 'NV', 'HI', 'AZ'], logo: 'https://tbwctechnology.com/wp-content/uploads/BA-e1710094190784-1024x825.png', url: 'https://www.blanchardassociates.com/' },
+      { id: 'intriq', name: 'Intriq', contact: 'Mark Jeffrey', phone: '(303) 758-5530', region: 'Mountain', territories: 'CO · UT · WY · SD', states: ['CO', 'UT', 'WY', 'SD'], logo: 'https://tbwctechnology.com/wp-content/uploads/intriq-1024x545.jpg', url: 'https://www.intriq.com/' },
+      { id: 'meglio', name: 'Meglio & Associates', contact: 'Dave Meglio', phone: '(314) 524-4424', region: 'Central', territories: 'MO · KS · Southern IL', states: ['MO', 'KS'], logo: 'https://tbwctechnology.com/wp-content/uploads/meglio-e1710094088378-1024x656.png', url: 'https://www.meglio.com/' },
+      { id: 'mercer', name: 'Mercer Sales', contact: 'Steve Mercer', phone: '(920) 915-6223', region: 'Central', territories: 'WI · U.P. Michigan', states: ['WI', 'MI'], logo: 'https://tbwctechnology.com/wp-content/uploads/Mercer-e1710094071367-1024x431.png', url: 'https://mercersalesinc.com/' },
+      { id: 'am', name: 'A&M', contact: 'Ray Doerrer', phone: '(630) 501-0880', region: 'Great Lakes', territories: '', states: [], logo: 'https://tbwctechnology.com/wp-content/uploads/AM-e1710094211761-1024x521.png' },
+      { id: 'pt', name: 'Power Techniques', contact: 'Ken Piron', phone: '(248) 291-6213', region: 'Great Lakes', territories: 'Michigan', states: ['MI'], logo: 'https://tbwctechnology.com/wp-content/uploads/PT.png', url: 'https://powertechniquesinc.com/' },
+      { id: 'invictus', name: 'Invictus', contact: 'Bill Holton', phone: '(540) 239-1033', region: 'Mid-Atlantic', territories: 'West Virginia · Southern Virginia', states: ['WV', 'VA'], logo: 'https://tbwctechnology.com/wp-content/uploads/invictus-1024x298.jpeg', url: 'https://myinvictussales.com/' },
+      { id: 'phoenix', name: 'Phoenix Sales and Marketing', contact: 'Bob Fern', phone: '(703) 282-4597', region: 'Mid-Atlantic', territories: 'Northern Virginia · MD · DC', states: ['VA', 'MD', 'DC'], logo: 'https://tbwctechnology.com/wp-content/uploads/Phoenix-e1710094055127-1024x479.png', url: 'https://www.myphoenixsales.com/' },
+      { id: 'pollart', name: 'Pollart Sales', contact: 'Eric Vogelsong', phone: '(609) 238-8414', region: 'Mid-Atlantic', territories: 'Eastern PA · Southern NJ · DE', states: ['DE'], logo: 'https://tbwctechnology.com/wp-content/uploads/Pollart-e1710094039654-1024x439.png', url: 'https://www.pollartsales.com/' },
+      { id: 'damin', name: 'Damin Sales', contact: 'Justin Felber', phone: '(917) 414-0098', region: 'Northeast', territories: 'NYC · Long Island · Westchester · Rockland · Orange · Putnam · Northern & Central NJ', states: ['NY', 'NJ'], logo: 'https://tbwctechnology.com/wp-content/uploads/Damin-Sales.png', url: 'https://www.daminsales.com/' },
+      { id: 'sss', name: 'Submeter Service Solutions', contact: "Jay O'Connor", phone: '(508) 326-2708', region: 'Northeast', territories: 'MA · CT · ME · NH · VT · RI · Upstate NY', states: ['MA', 'CT', 'ME', 'NH', 'VT', 'RI', 'NY'], logo: 'https://tbwctechnology.com/wp-content/uploads/SSS-1024x380.png', url: 'https://www.submeterservicesolutions.com/' },
+      { id: 'ues', name: 'United Electrical Sales', contact: 'Tom Holcombe', phone: '(336) 803-8338', region: 'Southeast', territories: 'NC · SC · GA · FL · AL · MS', states: ['NC', 'SC', 'GA', 'FL', 'AL', 'MS'], logo: 'https://tbwctechnology.com/wp-content/uploads/UES-e1710093979574-1024x377.png', url: 'https://uesrep.com/' },
+      { id: 'bellmccoy', name: 'Bell & McCoy', contact: 'Scott Thomas', phone: '(972) 489-2879', region: 'South Central', territories: 'TX · OK · AR · LA · MS · TN · NM', states: ['TX', 'OK', 'AR', 'LA', 'MS', 'TN', 'NM'], logo: 'https://tbwctechnology.com/wp-content/uploads/Bell-and-Mccoy-e1710094170962-1024x433.png', url: 'https://www.bellandmccoy.com/' },
+    ];
+
+    const STATE_TO_AGENCY = (() => {
+      const m = {};
+      AGENCIES.forEach(a => a.states.forEach(s => { m[s] = a.id; }));
+      return m;
+    })();
+
+    const ZIP_TO_STATE = {
+      '0': ['MA', 'RI', 'NH', 'ME', 'VT', 'CT', 'NJ'],
+      '1': ['NY', 'PA', 'DE'],
+      '2': ['DC', 'VA', 'MD', 'NC', 'SC', 'WV'],
+      '3': ['FL', 'GA', 'AL', 'TN', 'MS'],
+      '4': ['KY', 'OH', 'IN', 'MI'],
+      '5': ['IA', 'WI', 'MN', 'MT', 'ND', 'SD'],
+      '6': ['IL', 'MO', 'KS', 'NE'],
+      '7': ['AR', 'LA', 'OK', 'TX'],
+      '8': ['CO', 'WY', 'ID', 'UT', 'AZ', 'NM', 'NV'],
+      '9': ['CA', 'OR', 'WA', 'AK', 'HI'],
+    };
+
+    function findAgencyByZip(zip) {
+      const d = zip.trim()[0];
+      if (!d || !ZIP_TO_STATE[d]) return null;
+      for (const st of ZIP_TO_STATE[d]) {
+        if (STATE_TO_AGENCY[st]) return { state: st, agency: STATE_TO_AGENCY[st] };
+      }
+      return null;
+    }
+
+    function AgencyCard({ a, highlighted, onClick }) {
+      return (
+        <article id={'agency-' + a.id} className={'agency' + (highlighted ? ' agency--hl' : '')} onClick={onClick}>
+          <span style={{ position: 'absolute', top: 10, right: 10, width: 9, height: 9, borderRadius: '50%', background: REP_COLORS[a.id] || '#4b5563' }} />
+          <div className="agency__logo">
+            {a.logo
+              ? (a.url
+                  ? <a href={a.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}><img src={a.logo} alt={a.name + ' logo'} loading="lazy" /></a>
+                  : <img src={a.logo} alt={a.name + ' logo'} loading="lazy" />)
+              : <span className="mono">{a.name.split(/\s+/).slice(0, 2).map(w => w[0]).join('')}</span>}
+          </div>
+          <div className="agency__body">
+            <div className="agency__hd">
+              <h4 className="agency__name">{a.name}</h4>
+            </div>
+            <div className="agency__terr">{a.territories}</div>
+            <div className="agency__contact">
+              <div className="agency__person">
+                <span className="agency__person-name">{a.contact}</span>
+              </div>
+              <div className="agency__actions">
+                <a className="agency__phone mono" href={`tel:${a.phone.replace(/\D/g, '')}`} onClick={(e) => e.stopPropagation()}>{a.phone}</a>
+                <a className="agency__email mono" href="https://tbwctechnology.com/contacttbwc/" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Email →</a>
+              </div>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    const FIPS_TO_STATE = {
+      '01': 'AL', '02': 'AK', '04': 'AZ', '05': 'AR', '06': 'CA', '08': 'CO', '09': 'CT',
+      '10': 'DE', '11': 'DC', '12': 'FL', '13': 'GA', '15': 'HI', '16': 'ID', '17': 'IL',
+      '18': 'IN', '19': 'IA', '20': 'KS', '21': 'KY', '22': 'LA', '23': 'ME', '24': 'MD',
+      '25': 'MA', '26': 'MI', '27': 'MN', '28': 'MS', '29': 'MO', '30': 'MT', '31': 'NE',
+      '32': 'NV', '33': 'NH', '34': 'NJ', '35': 'NM', '36': 'NY', '37': 'NC', '38': 'ND',
+      '39': 'OH', '40': 'OK', '41': 'OR', '42': 'PA', '44': 'RI', '45': 'SC', '46': 'SD',
+      '47': 'TN', '48': 'TX', '49': 'UT', '50': 'VT', '51': 'VA', '53': 'WA', '54': 'WV',
+      '55': 'WI', '56': 'WY',
+    };
+
+    const REP_COLORS = {
+      'usnw':      '#2563eb',
+      'dz':        '#7c3aed',
+      'ba':        '#e11d48',
+      'intriq':    '#d97706',
+      'meglio':    '#16a34a',
+      'mercer':    '#38bdf8',
+      'am':        '#0d9488',
+      'pt':        '#9333ea',
+      'invictus':  '#ea580c',
+      'phoenix':   '#0369a1',
+      'pollart':   '#db2777',
+      'damin':     '#854d0e',
+      'sss':       '#65a30d',
+      'ues':       '#ca8a04',
+      'bellmccoy': '#0f766e',
+    };
+
+    function USMapSVG({ highlightId, onSelect }) {
+      const [features, setFeatures] = React.useState([]);
+      const [pathFn, setPathFn] = React.useState(null);
+      const [tooltip, setTooltip] = React.useState(null);
+      const containerRef = React.useRef();
+
+      React.useEffect(() => {
+        const proj = d3.geoAlbersUsa().scale(1200).translate([490, 300]);
+        const gen = d3.geoPath().projection(proj);
+        setPathFn(() => gen);
+        fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+          .then(r => r.json())
+          .then(us => setFeatures(topojson.feature(us, us.objects.states).features));
+      }, []);
+
+      const getAgency = React.useCallback(id => {
+        const st = FIPS_TO_STATE[String(id).padStart(2, '0')];
+        if (!st) return null;
+        const agencyId = STATE_TO_AGENCY[st];
+        return agencyId ? AGENCIES.find(a => a.id === agencyId) : null;
+      }, []);
+
+      if (!pathFn || !features.length) {
+        return <div className="usmap"><div className="usmap__loading">Loading territory map…</div></div>;
+      }
+
+      const repList = AGENCIES.filter(a => a.states.length > 0).slice().sort((a, b) => a.contact.localeCompare(b.contact));
+
+      return (
+        <div className="usmap" ref={containerRef}>
+          <div style={{ position: 'relative' }}>
+            <svg
+              viewBox="10 15 955 570"
+              className="usmap__svg"
+              aria-label="US representative territory map"
+              onMouseLeave={() => setTooltip(null)}
+            >
+              <defs>
+                <clipPath id="ca-north-clip"><rect x="0" y="0" width="975" height="310" /></clipPath>
+                <clipPath id="ca-south-clip"><rect x="0" y="310" width="975" height="300" /></clipPath>
+                <clipPath id="nv-north-clip"><rect x="0" y="0" width="975" height="285" /></clipPath>
+                <clipPath id="nv-south-clip"><rect x="0" y="285" width="975" height="305" /></clipPath>
+                <clipPath id="mi-north-clip"><rect x="0" y="0" width="975" height="185" /></clipPath>
+                <clipPath id="mi-south-clip"><rect x="0" y="185" width="975" height="415" /></clipPath>
+                <clipPath id="pa-east-clip"><rect x="800" y="0" width="175" height="600" /></clipPath>
+                <clipPath id="pa-west-clip"><rect x="0" y="0" width="800" height="600" /></clipPath>
+                <clipPath id="nj-north-clip" clipPathUnits="objectBoundingBox"><rect x="0" y="0" width="1" height="0.55" /></clipPath>
+                <clipPath id="nj-south-clip" clipPathUnits="objectBoundingBox"><rect x="0" y="0.55" width="1" height="0.45" /></clipPath>
+                <clipPath id="il-north-clip" clipPathUnits="objectBoundingBox"><rect x="0" y="0" width="1" height="0.55" /></clipPath>
+                <clipPath id="il-south-clip" clipPathUnits="objectBoundingBox"><rect x="0" y="0.55" width="1" height="0.45" /></clipPath>
+                <clipPath id="ny-north-clip" clipPathUnits="objectBoundingBox"><rect x="0" y="0" width="1" height="0.60" /></clipPath>
+                <clipPath id="ny-south-clip" clipPathUnits="objectBoundingBox"><rect x="0" y="0.60" width="1" height="0.40" /></clipPath>
+                <clipPath id="va-north-clip"><rect x="0" y="0" width="975" height="295" /></clipPath>
+                <clipPath id="va-south-clip"><rect x="0" y="295" width="975" height="305" /></clipPath>
+              </defs>
+              {features.map(f => {
+                const st = FIPS_TO_STATE[String(f.id).padStart(2, '0')];
+                if (st === 'CA' || st === 'NV' || st === 'MI' || st === 'VA' || st === 'NY' || st === 'NJ' || st === 'PA' || st === 'IL') return null;
+                const agency = getAgency(f.id);
+                const color = agency ? REP_COLORS[agency.id] : '#4b5563';
+                const isHL = agency && agency.id === highlightId;
+                const dimmed = highlightId && !isHL;
+                return (
+                  <path
+                    key={f.id}
+                    d={pathFn(f)}
+                    fill={color}
+                    stroke="var(--bg)"
+                    strokeWidth={1.2}
+                    style={{
+                      cursor: agency ? 'pointer' : 'default',
+                      opacity: dimmed ? 0.2 : 0.78,
+                      filter: isHL ? 'brightness(1.25)' : 'none',
+                      transition: 'opacity .2s ease, filter .2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      if (!agency) return;
+                      const rect = containerRef.current.getBoundingClientRect();
+                      setTooltip({ agency, st, x: e.clientX - rect.left, y: e.clientY - rect.top });
+                    }}
+                    onMouseMove={e => {
+                      if (!agency) return;
+                      const rect = containerRef.current.getBoundingClientRect();
+                      setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev);
+                    }}
+                    onMouseLeave={() => setTooltip(null)}
+                    onClick={() => agency && onSelect && onSelect(agency)}
+                  >
+                    <title>{st || ''}{agency ? ' — ' + agency.name : ''}</title>
+                  </path>
+                );
+              })}
+              {(() => {
+                const caF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'CA');
+                if (!caF) return null;
+                const caPath = pathFn(caF);
+                const dzAg = AGENCIES.find(a => a.id === 'dz');
+                const baAg = AGENCIES.find(a => a.id === 'ba');
+                const mkPath = (ag, clip) => {
+                  const isHL = highlightId === ag.id;
+                  const dimmed = highlightId && !isHL;
+                  return (
+                    <path
+                      key={'ca-' + ag.id}
+                      d={caPath}
+                      fill={REP_COLORS[ag.id]}
+                      stroke="var(--bg)"
+                      strokeWidth={1.2}
+                      clipPath={`url(#${clip})`}
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: ag, st: 'CA', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(ag)}
+                    />
+                  );
+                };
+                return <React.Fragment>{mkPath(dzAg, 'ca-north-clip')}{mkPath(baAg, 'ca-south-clip')}</React.Fragment>;
+              })()}
+              {(() => {
+                const nvF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'NV');
+                if (!nvF) return null;
+                const nvPath = pathFn(nvF);
+                const dzAg = AGENCIES.find(a => a.id === 'dz');
+                const baAg = AGENCIES.find(a => a.id === 'ba');
+                const mkPath = (ag, clip) => {
+                  const isHL = highlightId === ag.id;
+                  const dimmed = highlightId && !isHL;
+                  return (
+                    <path
+                      key={'nv-' + ag.id}
+                      d={nvPath}
+                      fill={REP_COLORS[ag.id]}
+                      stroke="var(--bg)"
+                      strokeWidth={1.2}
+                      clipPath={`url(#${clip})`}
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: ag, st: 'NV', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(ag)}
+                    />
+                  );
+                };
+                return <React.Fragment>{mkPath(dzAg, 'nv-north-clip')}{mkPath(baAg, 'nv-south-clip')}</React.Fragment>;
+              })()}
+              {(() => {
+                const miF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'MI');
+                if (!miF) return null;
+                const ptAg = AGENCIES.find(a => a.id === 'pt');
+                const mercerAg = AGENCIES.find(a => a.id === 'mercer');
+                const polygons = miF.geometry.type === 'MultiPolygon'
+                  ? miF.geometry.coordinates
+                  : [miF.geometry.coordinates];
+                const sorted = [...polygons].sort((a, b) => b[0].length - a[0].length);
+                return sorted.map((coords, i) => {
+                  const ag = i === 0 ? mercerAg : ptAg;
+                  const feat = { type: 'Feature', geometry: { type: 'Polygon', coordinates: coords } };
+                  const isHL = highlightId === ag.id;
+                  const dimmed = highlightId && !isHL;
+                  return (
+                    <path
+                      key={'mi-poly-' + i}
+                      d={pathFn(feat)}
+                      fill={REP_COLORS[ag.id]}
+                      stroke="var(--bg)"
+                      strokeWidth={1.2}
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: ag, st: 'MI', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(ag)}
+                    />
+                  );
+                });
+              })()}
+              {(() => {
+                const vaF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'VA');
+                if (!vaF) return null;
+                const vaPath = pathFn(vaF);
+                const phoenixAg = AGENCIES.find(a => a.id === 'phoenix');
+                const invictusAg = AGENCIES.find(a => a.id === 'invictus');
+                const mkPath = (ag, clip) => {
+                  const isHL = highlightId === ag.id;
+                  const dimmed = highlightId && !isHL;
+                  return (
+                    <path
+                      key={'va-' + ag.id}
+                      d={vaPath}
+                      fill={REP_COLORS[ag.id]}
+                      stroke="var(--bg)"
+                      strokeWidth={1.2}
+                      clipPath={`url(#${clip})`}
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: ag, st: 'VA', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(ag)}
+                    />
+                  );
+                };
+                return <React.Fragment>{mkPath(phoenixAg, 'va-north-clip')}{mkPath(invictusAg, 'va-south-clip')}</React.Fragment>;
+              })()}
+              {(() => {
+                const paF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'PA');
+                if (!paF) return null;
+                const paPath = pathFn(paF);
+                const pollartAg = AGENCIES.find(a => a.id === 'pollart');
+                const isHL = highlightId === 'pollart';
+                const dimmed = highlightId && !isHL;
+                return (
+                  <React.Fragment>
+                    <path key="pa-west" d={paPath} fill="#4b5563" stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath="url(#pa-west-clip)"
+                      style={{ cursor: 'default', opacity: dimmed ? 0.2 : 0.78, transition: 'opacity .2s ease' }}
+                    />
+                    <path key="pa-east" d={paPath} fill={REP_COLORS['pollart']} stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath="url(#pa-east-clip)"
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: pollartAg, st: 'PA', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(pollartAg)}
+                    />
+                  </React.Fragment>
+                );
+              })()}
+              {(() => {
+                const meglioAg = AGENCIES.find(a => a.id === 'meglio');
+                const ilF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'IL');
+                if (!ilF) return null;
+                const ilPath = pathFn(ilF);
+                const isHL = highlightId === 'meglio';
+                const dimmed = highlightId && !isHL;
+                return (
+                  <React.Fragment>
+                    <path key="il-north" d={ilPath} fill="#4b5563" stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath="url(#il-north-clip)"
+                      style={{ cursor: 'default', opacity: dimmed ? 0.2 : 0.78, transition: 'opacity .2s ease' }}
+                    />
+                    <path key="il-south" d={ilPath} fill={REP_COLORS['meglio']} stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath="url(#il-south-clip)"
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: meglioAg, st: 'IL', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(meglioAg)}
+                    />
+                  </React.Fragment>
+                );
+              })()}
+              {(() => {
+                const sssAg = AGENCIES.find(a => a.id === 'sss');
+                const daminAg = AGENCIES.find(a => a.id === 'damin');
+                const nyF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'NY');
+                const njF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'NJ');
+                const mkSplit = (ag, feat, clipId, stCode, key) => {
+                  if (!feat) return null;
+                  const isHL = highlightId === ag.id;
+                  const dimmed = highlightId && !isHL;
+                  return (
+                    <path key={key} d={pathFn(feat)} fill={REP_COLORS[ag.id]} stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath={`url(#${clipId})`}
+                      style={{ cursor: 'pointer', opacity: dimmed ? 0.2 : 0.78, filter: isHL ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: ag, st: stCode, x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(ag)}
+                    />
+                  );
+                };
+                return (
+                  <React.Fragment>
+                    {mkSplit(sssAg, nyF, 'ny-north-clip', 'NY', 'ny-sss')}
+                    {mkSplit(daminAg, nyF, 'ny-south-clip', 'NY', 'ny-damin')}
+                  </React.Fragment>
+                );
+              })()}
+              {(() => {
+                const njF = features.find(f => FIPS_TO_STATE[String(f.id).padStart(2, '0')] === 'NJ');
+                if (!njF) return null;
+                const njPath = pathFn(njF);
+                const daminAg = AGENCIES.find(a => a.id === 'damin');
+                const pollartAg = AGENCIES.find(a => a.id === 'pollart');
+                const isHLd = highlightId === 'damin';
+                const isHLp = highlightId === 'pollart';
+                const dimmedD = highlightId && !isHLd;
+                const dimmedP = highlightId && !isHLp;
+                return (
+                  <React.Fragment>
+                    <path key="nj-north" d={njPath} fill={REP_COLORS['damin']} stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath="url(#nj-north-clip)"
+                      style={{ cursor: 'pointer', opacity: dimmedD ? 0.2 : 0.78, filter: isHLd ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: daminAg, st: 'NJ', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(daminAg)}
+                    />
+                    <path key="nj-south" d={njPath} fill={REP_COLORS['pollart']} stroke="var(--bg)" strokeWidth={1.2}
+                      clipPath="url(#nj-south-clip)"
+                      style={{ cursor: 'pointer', opacity: dimmedP ? 0.2 : 0.78, filter: isHLp ? 'brightness(1.25)' : 'none', transition: 'opacity .2s ease, filter .2s ease' }}
+                      onMouseEnter={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip({ agency: pollartAg, st: 'NJ', x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+                      onMouseMove={e => { const rect = containerRef.current.getBoundingClientRect(); setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : prev); }}
+                      onMouseLeave={() => setTooltip(null)}
+                      onClick={() => onSelect && onSelect(pollartAg)}
+                    />
+                  </React.Fragment>
+                );
+              })()}
+              {features.map(f => {
+                const st = FIPS_TO_STATE[String(f.id).padStart(2, '0')];
+                if (!st) return null;
+                const c = pathFn.centroid(f);
+                if (!c || isNaN(c[0]) || isNaN(c[1])) return null;
+                return (
+                  <text
+                    key={'lbl-' + f.id}
+                    x={c[0]}
+                    y={c[1]}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize="7.5"
+                    fontWeight="700"
+                    fill="rgba(255,255,255,0.92)"
+                    style={{ pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.03em' }}
+                  >
+                    {st}
+                  </text>
+                );
+              })}
+            </svg>
+            {tooltip && (
+              <div
+                className="usmap__tooltip"
+                style={{
+                  left: Math.min(tooltip.x + 14, (containerRef.current?.offsetWidth ?? 975) - 255),
+                  top: Math.max(tooltip.y - 80, 8),
+                }}
+              >
+                <div className="usmap__tt-state">{tooltip.st}</div>
+                <div className="usmap__tt-name">{tooltip.agency.name}</div>
+                <div className="usmap__tt-terr">{tooltip.agency.territories}</div>
+                <div className="usmap__tt-hint">Click to view details ↓</div>
+              </div>
+            )}
+          </div>
+          <div className="usmap__legend">
+            {repList.map(a => (
+              <span key={a.id} className="usmap__legend-item" style={{ cursor: 'pointer' }} onClick={() => onSelect && onSelect(a)}>
+                <span className="usmap__legend-dot" style={{ background: REP_COLORS[a.id] }} />
+                {a.contact}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function RepsMap() {
+      const [zip, setZip] = React.useState('');
+      const [match, setMatch] = React.useState(null);
+      const [query, setQuery] = React.useState('');
+      const [activeAgency, setActiveAgency] = React.useState(null);
+      const resultRef = React.useRef();
+
+      const onZip = (e) => {
+        e.preventDefault();
+        if (!/^\d{5}$/.test(zip.trim())) { setMatch({ err: 'Enter a 5-digit ZIP.' }); setActiveAgency(null); return; }
+        const hit = findAgencyByZip(zip);
+        if (hit) {
+          const agency = AGENCIES.find(a => a.id === hit.agency);
+          setMatch({ agency, state: hit.state });
+          setActiveAgency(hit.agency);
+        } else {
+          setMatch({ err: 'No direct match — browse the directory below.' });
+          setActiveAgency(null);
+        }
+      };
+
+      const onMapSelect = (agency) => {
+        setActiveAgency(agency.id);
+        setTimeout(() => document.getElementById('agency-' + agency.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+      };
+
+      const q = query.trim().toLowerCase();
+      const filtered = q
+        ? AGENCIES.filter(a => (a.name + ' ' + a.contact + ' ' + a.territories + ' ' + a.states.join(' ')).toLowerCase().includes(q))
+        : AGENCIES;
+      const sorted = [...filtered].sort((a, b) => a.contact.localeCompare(b.contact));
+
+      return (
+        <section id="reps" className="row" style={{ paddingTop: 'clamp(12px, 2vw, 24px)' }}>
+          <div className="wrap">
+            <div style={{ marginBottom: 'clamp(24px, 3vw, 40px)', textAlign: 'center' }}>
+              <h2 className="h2 sec-hd__title" style={{ fontSize: 'clamp(20px, 2.4vw, 32px)' }}>Find your representative</h2>
+              <span style={{ display: 'block', marginTop: 8, fontFamily: 'var(--f-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>15 agencies · 50 states</span>
+            </div>
+
+            <USMapSVG highlightId={activeAgency} onSelect={onMapSelect} />
+
+            <div className="repdir">
+              <div className="repgrp__grid">
+                {sorted.map(a => <AgencyCard key={a.id} a={a} highlighted={activeAgency === a.id} onClick={() => setActiveAgency(activeAgency === a.id ? null : a.id)} />)}
+              </div>
+              {!sorted.length && (
+                <div className="repdir__empty mono">No agencies match "{query}". Try a state code or partial name.</div>
+              )}
+            </div>
+
+            <div className="rmap__newrep">
+              <div className="rmap__newrep-l">
+                <div className="kicker"><span className="num">-</span> &nbsp; Become a representative</div>
+                <h3 className="h2" style={{ fontSize: 'clamp(24px, 2.4vw, 36px)', marginTop: 6 }}>Looking to add TBWC to your line card?</h3>
+              </div>
+              <div className="rmap__newrep-r">
+                <p className="body" style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: '46ch' }}>
+                  Submit your agency for review. Most applications are approved within one business day with portal credentials and a dedicated account manager.
+                </p>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <a className="btn btn--accent" href="newrep-request.html">Registration request <Arrow /></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ── APP ────────────────────────────────────────────────────────────────────
+
+    function App() {
+      React.useEffect(() => {
+        const root = document.documentElement;
+        root.dataset.theme = 'light';
+        root.dataset.density = 'regular';
+        root.style.setProperty('--accent', '#2A6FDB');
+        root.style.setProperty('--accent-ink', '#fff');
+        root.style.setProperty('--f-sans',  '"Geist", ui-sans-serif, system-ui, sans-serif');
+        root.style.setProperty('--f-mono',  '"Geist Mono", ui-monospace, SFMono-Regular, monospace');
+        root.style.setProperty('--f-serif', '"Instrument Serif", Georgia, serif');
+      }, []);
+
+      return (
+        <>
+          <main>
+            <RepsMap />
+          </main>
+          <Footer />
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Rep Request — TBWC Technology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .nr-form { display: flex; flex-direction: column; gap: 22px; max-width: 640px; }
+    .nr-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .nr-field { display: flex; flex-direction: column; gap: 6px; flex: 1 1 200px; min-width: 0; }
+    .nr-field > label { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--ink-2); }
+    .nr-field .req { color: #c0392b; }
+    .nr-input, .nr-textarea {
+      font: inherit; font-size: 15px; color: var(--ink);
+      background: var(--bg); border: 1px solid var(--rule-2); border-radius: 10px;
+      padding: 11px 13px; width: 100%; box-sizing: border-box; }
+    .nr-input:focus, .nr-textarea:focus { outline: none; border-color: var(--accent, #2A6FDB); }
+    .nr-textarea { resize: vertical; min-height: 120px; }
+    .nr-sub { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+    .nr-fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .nr-fieldset > legend { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--ink-2); padding: 0; margin-bottom: 6px; }
+  </style>
+</head>
+
+<body>
+  <div id="site-nav"></div>
+  <script src="nav.js"></script>
+
+  <main>
+    <section class="row">
+      <div class="wrap" style="max-width: 860px;">
+        <h1 class="h2" style="margin-bottom: 14px;">New TBWC Rep Request</h1>
+        <p class="sec-hd__sub" style="margin-bottom: 8px;">
+          Thank you for requesting access to the TBWC Technology Rep Portal, where current sales &amp;
+          marketing collateral, pricing, tech support and application assistance are made available on demand.
+        </p>
+        <p class="sec-hd__sub" style="margin-bottom: 32px;">
+          The TBWC Rep Portal is for the exclusive use of our Manufacturer's Representatives and their
+          authorized personnel.
+        </p>
+
+        <form class="nr-form" id="nr-form" autocomplete="on" novalidate>
+          <fieldset class="nr-fieldset">
+            <legend>Name <span class="req">*</span></legend>
+            <div class="nr-row">
+              <div class="nr-field">
+                <input class="nr-input" type="text" name="firstName" placeholder="First Name" required />
+                <span class="nr-sub">First Name</span>
+              </div>
+              <div class="nr-field">
+                <input class="nr-input" type="text" name="lastName" placeholder="Last Name" required />
+                <span class="nr-sub">Last Name</span>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="nr-row">
+            <div class="nr-field">
+              <label for="nr-agency">Agency Name <span class="req">*</span></label>
+              <input class="nr-input" id="nr-agency" type="text" name="agencyName" required />
+            </div>
+            <div class="nr-field">
+              <label for="nr-title">Title / Position</label>
+              <input class="nr-input" id="nr-title" type="text" name="title" />
+            </div>
+          </div>
+
+          <div class="nr-field">
+            <label for="nr-email">Email <span class="req">*</span></label>
+            <input class="nr-input" id="nr-email" type="email" name="email" placeholder="example@example.com" required />
+          </div>
+
+          <div class="nr-row">
+            <div class="nr-field" style="flex: 2 1 240px;">
+              <label for="nr-work">Work Phone</label>
+              <input class="nr-input" id="nr-work" type="tel" name="workPhone" />
+            </div>
+            <div class="nr-field" style="flex: 0 1 120px;">
+              <label for="nr-ext">Ext.</label>
+              <input class="nr-input" id="nr-ext" type="text" name="ext" inputmode="numeric" />
+            </div>
+            <div class="nr-field" style="flex: 2 1 240px;">
+              <label for="nr-mobile">Mobile</label>
+              <input class="nr-input" id="nr-mobile" type="tel" name="mobile" />
+            </div>
+          </div>
+
+          <fieldset class="nr-fieldset">
+            <legend>Address <span class="req">*</span></legend>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="addr1" placeholder="Street Address" required />
+              <span class="nr-sub">Street Address</span>
+            </div>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="addr2" placeholder="Street Address Line 2" />
+              <span class="nr-sub">Street Address Line 2</span>
+            </div>
+            <div class="nr-row">
+              <div class="nr-field">
+                <input class="nr-input" type="text" name="city" placeholder="City" required />
+                <span class="nr-sub">City</span>
+              </div>
+              <div class="nr-field">
+                <input class="nr-input" type="text" name="state" placeholder="State / Province" required />
+                <span class="nr-sub">State / Province</span>
+              </div>
+              <div class="nr-field">
+                <input class="nr-input" type="text" name="postal" placeholder="Postal / Zip Code" required />
+                <span class="nr-sub">Postal / Zip Code</span>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="nr-field">
+            <label for="nr-share">Please share a little bit about yourself &amp; your position. <span class="req">*</span></label>
+            <textarea class="nr-textarea" id="nr-share" name="pleaseShare" required></textarea>
+          </div>
+
+          <div>
+            <button type="submit" class="btn btn--primary">Submit</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var RECIPIENT = 'info@TBWCinc.com';
+
+      var form = document.getElementById('nr-form');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!form.reportValidity()) return;
+
+        var f = function (n) { var el = form.elements[n]; return el ? el.value.trim() : ''; };
+        var RULE = '========================================';
+        var dash = '----------------------------------------';
+
+        // Right-pad labels so values line up in monospace-ish clients.
+        function kv(label, value) { return '  ' + (label + ':').padEnd(16) + (value || '—'); }
+
+        var phone = f('workPhone') + (f('ext') ? '  ext. ' + f('ext') : '');
+        var cityLine = [f('city'), f('state'), f('postal')].filter(Boolean).join(', ');
+
+        var lines = [
+          RULE,
+          '  NEW REP REGISTRATION REQUEST',
+          RULE,
+          '',
+          'CONTACT',
+          dash,
+          kv('Name', f('firstName') + ' ' + f('lastName')),
+          kv('Agency', f('agencyName')),
+          kv('Title', f('title')),
+          kv('Email', f('email')),
+          kv('Work phone', phone.trim()),
+          kv('Mobile', f('mobile')),
+          '',
+          'ADDRESS',
+          dash,
+          '  ' + (f('addr1') || '—'),
+          f('addr2') ? '  ' + f('addr2') : null,
+          cityLine ? '  ' + cityLine : null,
+          '',
+          'ABOUT',
+          dash,
+          '  ' + (f('pleaseShare') || '—'),
+          '',
+          RULE,
+          '  Submitted via tbwctechnology.com',
+          RULE
+        ].filter(function (l) { return l !== null; });
+
+        var subject = 'New Rep Request — ' + f('agencyName');
+        var mailto = 'mailto:' + RECIPIENT +
+          '?subject=' + encodeURIComponent(subject) +
+          '&body=' + encodeURIComponent(lines.join('\n'));
+        window.location.href = mailto;
+      });
+    })();
+  </script>
+</body>
+
+</html>
