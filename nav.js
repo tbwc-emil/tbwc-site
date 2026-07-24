@@ -47,12 +47,16 @@
           '<div class="portal-drop" data-drop hidden>' +
             '<p class="portal-drop__title">Rep Portal</p>' +
             '<form data-portal-form style="display:flex;flex-direction:column;gap:10px">' +
-              '<input class="portal-drop__input" type="email" placeholder="Email" required />' +
-              '<input class="portal-drop__input" type="password" placeholder="Password" required />' +
-              '<button type="submit" class="btn btn--primary" style="width:100%;justify-content:center">Log in</button>' +
+              '<input class="portal-drop__input" data-field="email" type="email" placeholder="Email" required />' +
+              '<div class="portal-drop__pass" data-pass-wrap>' +
+                '<input class="portal-drop__input" data-field="password" type="password" placeholder="Password" required />' +
+                '<button type="button" class="portal-drop__reveal" data-reveal aria-label="Show password" aria-pressed="false"></button>' +
+              '</div>' +
+              '<div data-portal-msg style="font-size:12px;line-height:1.4;display:none"></div>' +
+              '<button type="submit" class="btn btn--primary" data-portal-submit style="width:100%;justify-content:center">Log in</button>' +
             '</form>' +
             '<div class="portal-drop__links">' +
-              '<a href="https://tbwctechnology.com/rep-portal/" target="_blank" rel="noopener noreferrer">Forgot password?</a>' +
+              '<a href="#" data-forgot-toggle>Forgot password?</a>' +
               '<a href="newrep-request.html" class="btn btn--ghost btn--sm">Become a Rep</a>' +
             '</div>' +
           '</div>' +
@@ -68,6 +72,27 @@
   var burger = mount.querySelector('[data-burger]');
   var mobile = mount.querySelector('[data-mobile]');
   var form = mount.querySelector('[data-portal-form]');
+  var emailInput = mount.querySelector('[data-field="email"]');
+  var passwordInput = mount.querySelector('[data-field="password"]');
+  var passWrap = mount.querySelector('[data-pass-wrap]');
+  var revealBtn = mount.querySelector('[data-reveal]');
+  var msgEl = mount.querySelector('[data-portal-msg]');
+  var submitBtn = mount.querySelector('[data-portal-submit]');
+  var forgotToggle = mount.querySelector('[data-forgot-toggle]');
+  var forgotMode = false;
+
+  // Show/hide password toggle.
+  var eyeIcon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var eyeOffIcon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.3 13.3 0 0 1-1.67 2.68"/><path d="M6.06 6.06A13.4 13.4 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.94-1.06"/><path d="m1 1 22 22"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+  revealBtn.innerHTML = eyeIcon;
+  revealBtn.addEventListener('click', function () {
+    var show = passwordInput.type === 'password';
+    passwordInput.type = show ? 'text' : 'password';
+    revealBtn.innerHTML = show ? eyeOffIcon : eyeIcon;
+    revealBtn.setAttribute('aria-pressed', show ? 'true' : 'false');
+    revealBtn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    passwordInput.focus();
+  });
 
   // Scrolled state
   function onScroll() { nav.setAttribute('data-scrolled', window.scrollY > 8 ? '1' : '0'); }
@@ -83,7 +108,46 @@
   document.addEventListener('mousedown', function (e) {
     if (!drop.hidden && !ctaGroup.contains(e.target)) setDrop(false);
   });
-  form.addEventListener('submit', function (e) { e.preventDefault(); window.location.href = 'products.html'; });
+  function showMsg(text, isError) {
+    msgEl.textContent = text;
+    msgEl.style.display = text ? 'block' : 'none';
+    msgEl.style.color = isError ? '#c0392b' : 'var(--ink-2)';
+  }
+
+  function setForgotMode(on) {
+    forgotMode = on;
+    passWrap.style.display = on ? 'none' : '';
+    passwordInput.required = !on;
+    submitBtn.textContent = on ? 'Send reset email' : 'Log in';
+    forgotToggle.textContent = on ? 'Back to sign in' : 'Forgot password?';
+    showMsg('', false);
+  }
+  forgotToggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    setForgotMode(!forgotMode);
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!window.TBWCAuth) { showMsg('Auth unavailable — try again in a moment.', true); return; }
+    var email = emailInput.value.trim();
+    submitBtn.disabled = true;
+
+    if (forgotMode) {
+      window.TBWCAuth.sendPasswordReset(email).then(function (res) {
+        submitBtn.disabled = false;
+        if (res.error) { showMsg(res.error.message, true); return; }
+        showMsg('Check your email for a reset link.', false);
+      });
+      return;
+    }
+
+    window.TBWCAuth.signIn(email, passwordInput.value).then(function (res) {
+      submitBtn.disabled = false;
+      if (res.error) { showMsg(res.error.message, true); return; }
+      window.location.href = 'portal.html';
+    });
+  });
 
   // Mobile menu
   function setMobile(open) {

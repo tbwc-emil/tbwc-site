@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rep Portal — TBWC Technology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script src="orders-grid.js"></script>
+</head>
+
+<body>
+  <div id="portal-root">
+    <div class="portal" role="status" style="align-items:center;justify-content:center;display:flex;min-height:100vh">
+      <span class="mono" style="color:var(--ink-3)">Checking session…</span>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.getElementById('portal-root');
+
+      function renderGate(message) {
+        root.innerHTML =
+          '<div class="portal" style="align-items:center;justify-content:center;display:flex;min-height:100vh;text-align:center">' +
+            '<div>' +
+              '<p class="body" style="margin-bottom:16px">' + message + '</p>' +
+              '<a class="btn btn--primary" href="index.html">Back to site</a>' +
+            '</div>' +
+          '</div>';
+      }
+
+      function renderDashboard(email, fullName) {
+        var actions = ['New order', 'Open an RMA', 'Register a deal', 'Download datasheet'];
+        var actionRows = actions.map(function (a) {
+          return '<a href="#" style="display:flex;justify-content:space-between;padding:10px 12px;border-radius:6px;border:var(--rule-w) solid var(--rule);font-size:13px;color:var(--ink-2)"><span>' + a + '</span><span>→</span></a>';
+        }).join('');
+
+        root.innerHTML =
+          '<div class="portal">' +
+            '<div class="portal__head">' +
+              '<div style="display:flex;gap:24px;align-items:center">' +
+                '<span class="brand"><span class="brand__mark">TBWC</span><span class="brand__sub">Rep Portal</span></span>' +
+                '<span class="mono" style="font-size:11px;color:var(--ink-3)">' + escapeHtml(email) + '</span>' +
+              '</div>' +
+              '<div style="display:flex;gap:10px">' +
+                '<a class="btn btn--ghost btn--sm" href="index.html">← Site</a>' +
+                '<button class="btn btn--ghost btn--sm" data-sign-out>Sign out</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="portal__body">' +
+              '<div class="portal__grid">' +
+                '<div class="portal__welcome">' +
+                  '<div style="width:100%">' +
+                    '<h2 style="font-size:24px;text-align:center">Welcome back' + (fullName ? ', ' + escapeHtml(fullName) : '') + '.</h2>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="portal__tile">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Q2 Booked</h3><span class="mono" style="font-size:11px;color:var(--ink-3)">USD</span></div>' +
+                  '<div class="portal__tile-num">$1.84M</div>' +
+                  '<div class="portal__tile-meta"><span>vs Q1</span><span class="up">▲ 18.4%</span></div>' +
+                '</div>' +
+                '<div class="portal__tile">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Open RMAs</h3><span class="mono" style="font-size:11px;color:var(--ink-3)">active</span></div>' +
+                  '<div class="portal__tile-num">7</div>' +
+                  '<div class="portal__tile-meta"><span>2 advance-shipped</span><span>review →</span></div>' +
+                '</div>' +
+                '<div class="portal__tile">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Total</h3><span class="mono" style="font-size:11px;color:var(--ink-3)">Q2</span></div>' +
+                  '<div class="portal__tile-num">$24,750</div>' +
+                  '<div class="portal__tile-meta"><span>Expires Jun 30</span><span>claim →</span></div>' +
+                '</div>' +
+                '<div class="portal__tile" style="grid-column:span 2">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Orders</h3><span class="mono" style="font-size:11px;color:var(--ink-3)" data-orders-count></span></div>' +
+                  '<div class="og__wrap" style="margin-top:8px" data-orders-wrap></div>' +
+                '</div>' +
+                '<div class="portal__tile">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Quick actions</h3></div>' +
+                  '<div style="display:grid;gap:8px;margin-top:4px">' + actionRows + '</div>' +
+                '</div>' +
+                '<div class="portal__tile" style="grid-column:span 3">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Documents</h3><span class="mono" style="font-size:11px;color:var(--ink-3)">Dropbox</span></div>' +
+                  '<div data-docs style="display:grid;gap:8px;margin-top:8px">' +
+                    '<span class="mono" style="font-size:12px;color:var(--ink-3)">Loading files…</span>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        root.querySelector('[data-sign-out]').addEventListener('click', function () {
+          window.TBWCAuth.signOut().then(function () { window.location.href = 'index.html'; });
+        });
+
+        loadDocs(root.querySelector('[data-docs]'));
+
+        window.TBWCOrdersGrid.create({
+          sb: window.TBWCAuth.sb,
+          mode: 'rep',
+          container: root.querySelector('[data-orders-wrap]'),
+          countEl: root.querySelector('[data-orders-count]')
+        }).load();
+      }
+
+      function fmtSize(bytes) {
+        if (!bytes && bytes !== 0) return '';
+        var u = ['B', 'KB', 'MB', 'GB'], i = 0, n = bytes;
+        while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+        return (i === 0 ? n : n.toFixed(1)) + ' ' + u[i];
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      var DOCS_BUCKET = (window.TBWCAuth && window.TBWCAuth.DOCS_BUCKET) || 'rep-docs';
+
+      function fileNode(f) {
+        return '<a class="tree__file" href="#" data-path="' + escapeHtml(f.path) + '">' +
+          '<span class="ico">📄</span>' +
+          '<span class="fname">' + escapeHtml(f.name) + '</span>' +
+          '<span class="fmeta">' + fmtSize(f.size) + ' &nbsp;↓</span>' +
+          '</a>';
+      }
+
+      function countFiles(node) {
+        var n = (node.files || []).length;
+        (node.subs || []).forEach(function (s) { n += (s.files || []).length; });
+        return n;
+      }
+
+      function folderNode(name, count, inner, open) {
+        return '<details' + (open ? ' open' : '') + '>' +
+          '<summary><span class="caret">▶</span><span class="ico">📁</span>' + escapeHtml(name) +
+          '<span class="count">' + count + '</span></summary>' +
+          '<div class="tree__children">' + inner + '</div>' +
+        '</details>';
+      }
+
+      function loadDocs(el) {
+        if (!el) return;
+        el.className = 'tree';
+        window.TBWCAuth.listDocsTree(DOCS_BUCKET).then(function (tree) {
+          var html = '';
+          (tree.rootFiles || []).forEach(function (f) { html += fileNode(f); });
+          tree.categories.forEach(function (cat) {
+            var inner = '';
+            cat.files.forEach(function (f) { inner += fileNode(f); });
+            cat.subs.forEach(function (sub) {
+              var subInner = sub.files.map(fileNode).join('');
+              inner += folderNode(sub.name, sub.files.length, subInner, false);
+            });
+            html += folderNode(cat.name, countFiles(cat), inner, false);
+          });
+          el.innerHTML = html || '<div class="tree__empty">No files yet.</div>';
+        }).catch(function (err) {
+          el.innerHTML = '<div class="tree__empty">Couldn\'t load files' +
+            (err && err.message ? ' — ' + escapeHtml(err.message) : '') + '.</div>';
+        });
+
+        el.addEventListener('click', function (e) {
+          var a = e.target.closest('[data-path]');
+          if (!a) return;
+          e.preventDefault();
+          if (a.dataset.busy) return;
+          a.dataset.busy = '1';
+          a.style.opacity = '0.5';
+          window.TBWCAuth.signedDownloadUrl(DOCS_BUCKET, a.getAttribute('data-path'), 60)
+            .then(function (res) {
+              a.style.opacity = '';
+              delete a.dataset.busy;
+              if (res.error || !res.data) { alert('Download link failed. Try again.'); return; }
+              window.location.href = res.data.signedUrl; // forces download (content-disposition)
+            });
+        });
+      }
+
+      if (!window.TBWCAuth) { renderGate('Auth unavailable — try again in a moment.'); return; }
+
+      window.TBWCAuth.getSession().then(function (res) {
+        var session = res.data && res.data.session;
+        if (!session) { window.location.href = 'index.html'; return; }
+
+        window.TBWCAuth.sb.from('reps').select('approved,first_name,last_name').eq('id', session.user.id).single().then(function (repRes) {
+          if (repRes.error || !repRes.data || !repRes.data.approved) {
+            window.TBWCAuth.signOut().then(function () {
+              renderGate('Your registration is pending approval.');
+            });
+            return;
+          }
+          var name = [repRes.data.first_name, repRes.data.last_name].filter(Boolean).join(' ');
+          renderDashboard(session.user.email, name);
+        });
+      });
+    })();
+  </script>
+</body>
+
+</html>

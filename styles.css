@@ -50,6 +50,7 @@ body {
   color: var(--ink);
   font-size: 16px;
   line-height: 1.5;
+  overflow-x: hidden;
   font-feature-settings: "ss01", "cv11";
   text-rendering: optimizeLegibility;
   transition: background .35s ease, color .35s ease;
@@ -594,6 +595,16 @@ h1, h2, h3, h4 {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 18%, transparent);
 }
+.portal-drop__pass { position: relative; }
+.portal-drop__pass .portal-drop__input { padding-right: 40px; }
+.portal-drop__reveal {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; padding: 6px; margin: 0; cursor: pointer;
+  color: var(--ink-3); border-radius: 6px;
+}
+.portal-drop__reveal:hover { color: var(--ink); }
+.portal-drop__reveal:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .portal-drop__links {
   display: flex;
   align-items: center;
@@ -1849,6 +1860,52 @@ h1, h2, h3, h4 {
   transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.3,1);
 }
 .reveal.in { opacity: 1; transform: none; }
+
+
+/* ===== Document tree (Windows-Explorer style) ===== */
+.tree { font-size: 13px; color: var(--ink-2); }
+.tree details { border: 0; }
+.tree summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--ink);
+  user-select: none;
+  font-weight: 500;
+}
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary:hover { background: var(--rule); }
+.tree summary .caret {
+  font-size: 9px;
+  color: var(--ink-3);
+  transition: transform .15s ease;
+  width: 8px;
+  flex-shrink: 0;
+}
+.tree details[open] > summary .caret { transform: rotate(90deg); }
+.tree summary .ico { font-size: 13px; flex-shrink: 0; }
+.tree summary .count { font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); margin-left: auto; }
+.tree__children { margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--rule); }
+.tree__file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.tree__file:hover { background: var(--rule); }
+.tree__file .ico { font-size: 13px; flex-shrink: 0; }
+.tree__file .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree__file .fmeta { font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+.tree__file .fmeta .act { color: var(--ink-3); text-decoration: none; padding: 0 4px; }
+.tree__file .fmeta .act:hover { color: var(--ink); }
+.tree__empty { padding: 12px 8px; font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); }
 
 
 /* ===== Representatives — find-your-rep map ===== */

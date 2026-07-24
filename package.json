@@ -1,0 +1,18 @@
+{
+  "name": "tbwc-site-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local admin scripts for the TBWC Supabase database",
+  "scripts": {
+    "db:test": "node scripts/db-test.js",
+    "db:schema": "node scripts/apply-schema.js",
+    "rep:approve": "node scripts/approve-rep.js",
+    "rep:admin": "node scripts/make-admin.js",
+    "smtp:test": "node scripts/smtp-test.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "nodemailer": "^9.0.3",
+    "pg": "^8.13.0"
+  }
+}

@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — Rep Approvals — TBWC Technology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .adm { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+    .adm__head { display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+    .adm__title { font-size: 22px; font-weight: 600; color: var(--ink); }
+    .adm__sub { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--ink-3); margin-left: 10px; }
+    .adm__table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .adm__table th { text-align: left; font-family: var(--f-mono); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3);
+      padding: 10px 12px; border-bottom: 1px solid var(--rule-2); }
+    .adm__table td { padding: 12px; border-bottom: 1px solid var(--rule); color: var(--ink-2); vertical-align: middle; }
+    .adm__table tr:last-child td { border-bottom: 0; }
+    .adm__name { color: var(--ink); font-weight: 500; }
+    .adm__email { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); }
+    .adm__wrap { border: 1px solid var(--rule-2); border-radius: 10px; overflow-x: auto; background: var(--bg); }
+    .badge { font-family: var(--f-mono); font-size: 11px; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+    .badge--ok { background: #e6f4ea; color: #1e7e34; }
+    .badge--pending { background: #fdf0e3; color: #b8681a; }
+    .badge--admin { background: #e8eefb; color: #2A6FDB; margin-left: 6px; }
+    .adm__msg { font-size: 13px; margin-bottom: 16px; }
+    .adm__empty { padding: 40px; text-align: center; color: var(--ink-3); }
+    .adm__act { display: flex; gap: 8px; }
+    .adm__topbar { display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+    .adm__head--sp { margin-top: 44px; }
+    .adm__head-left { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .adm__caret { display: inline-block; font-size: 30px; color: var(--ink-3);
+      transition: transform 0.15s ease; }
+    .adm__caret--open { transform: rotate(90deg); }
+    /* Breaks the Orders card out of .adm's 1000px max-width to span the full viewport,
+       while keeping its own gutter padding so content doesn't touch the edge. */
+    .adm__full { width: auto; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%);
+      padding-left: 20px; padding-right: 20px; box-sizing: border-box; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script src="orders-grid.js"></script>
+</head>
+
+<body>
+  <div id="admin-root">
+    <div class="adm" role="status" style="text-align:center;padding-top:120px">
+      <span class="mono" style="color:var(--ink-3)">Checking access…</span>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.getElementById('admin-root');
+      var sb = window.TBWCAuth && window.TBWCAuth.sb;
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+      }
+
+      function renderGate(message) {
+        root.innerHTML =
+          '<div class="adm" style="text-align:center;padding-top:120px">' +
+            '<p class="body" style="margin-bottom:16px">' + esc(message) + '</p>' +
+            '<a class="btn btn--primary" href="index.html">Back to site</a>' +
+          '</div>';
+      }
+
+      function fmtDate(iso) {
+        try { return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+        catch (e) { return ''; }
+      }
+
+      // Collapse state per card — persists across re-renders (approve/revoke etc.
+      // call render() again, but we want the user's expand/collapse choice to stick).
+      var cardOpen = { orders: true, reps: false, docs: false };
+
+      function cardHead(key, title, sub, rightHtml, extraClass) {
+        return '<div class="adm__head' + (extraClass ? ' ' + extraClass : '') + '">' +
+          '<div class="adm__head-left" data-card-toggle="' + key + '">' +
+            '<span class="adm__caret' + (cardOpen[key] ? ' adm__caret--open' : '') + '">▸</span>' +
+            '<span class="adm__title">' + esc(title) + '</span><span class="adm__sub">' + sub + '</span>' +
+          '</div>' +
+          (rightHtml || '') +
+        '</div>';
+      }
+
+      function cardBodyAttrs(key) {
+        return 'data-card-body="' + key + '" style="' + (cardOpen[key] ? '' : 'display:none;') + '"';
+      }
+
+      function onCardToggle(e) {
+        var el = e.target.closest('[data-card-toggle]');
+        if (!el) return;
+        var key = el.getAttribute('data-card-toggle');
+        cardOpen[key] = !cardOpen[key];
+        var body = root.querySelector('[data-card-body="' + key + '"]');
+        if (body) body.style.display = cardOpen[key] ? '' : 'none';
+        el.querySelector('.adm__caret').classList.toggle('adm__caret--open', cardOpen[key]);
+      }
+
+      function render(reps, adminEmail, adminName) {
+        var rows = reps.map(function (r) {
+          var name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
+          var statusBadge = r.approved
+            ? '<span class="badge badge--ok">approved</span>'
+            : '<span class="badge badge--pending">pending</span>';
+          if (r.is_admin) statusBadge += '<span class="badge badge--admin">admin</span>';
+          var action = r.approved
+            ? '<button class="btn btn--ghost btn--sm" data-revoke="' + r.id + '">Revoke</button>'
+            : '<button class="btn btn--primary btn--sm" data-approve="' + r.id + '">Approve</button>';
+          return '<tr data-row="' + r.id + '">' +
+            '<td><div class="adm__name">' + esc(name) + '</div><div class="adm__email">' + esc(r.email) + '</div></td>' +
+            '<td>' + esc(r.agency_name || '—') + '</td>' +
+            '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + fmtDate(r.created_at) + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td><div class="adm__act">' + action + '</div></td>' +
+          '</tr>';
+        }).join('');
+
+        root.innerHTML =
+          '<div class="adm">' +
+            '<div class="adm__topbar">' +
+              '<span class="adm__title">Welcome back, Admin:' + (adminName ? ' ' + esc(adminName) : '') + '</span>' +
+              '<div style="display:flex;gap:10px;align-items:center">' +
+                '<span class="mono" style="font-size:11px;color:var(--ink-3)">' + esc(adminEmail) + '</span>' +
+                '<a class="btn btn--ghost btn--sm" href="portal.html">← Portal</a>' +
+                '<button class="btn btn--ghost btn--sm" data-sign-out>Sign out</button>' +
+              '</div>' +
+            '</div>' +
+
+            // ---- Orders (public."order", imported from the build-list spreadsheet) ----
+            cardHead('orders', 'Orders', '<span data-orders-count>Admin</span>',
+              '<button class="btn btn--primary btn--sm" data-order-add>+ Add order</button>') +
+            '<div ' + cardBodyAttrs('orders') + '>' +
+              '<div class="adm__msg adm__full" data-ordersmsg style="display:none"></div>' +
+              '<div class="adm__wrap adm__full" style="overflow-x:auto" data-orders-wrap>' +
+                '<div class="adm__empty">Loading…</div>' +
+              '</div>' +
+            '</div>' +
+
+            // ---- Rep Approvals ----
+            cardHead('reps', 'Rep Approvals', '', '', 'adm__head--sp') +
+            '<div ' + cardBodyAttrs('reps') + '>' +
+              '<div class="adm__msg" data-msg style="display:none"></div>' +
+              '<div class="adm__wrap">' +
+                (reps.length
+                  ? '<table class="adm__table"><thead><tr>' +
+                      '<th>Rep</th><th>Agency</th><th>Requested</th><th>Status</th><th></th>' +
+                    '</tr></thead><tbody>' + rows + '</tbody></table>'
+                  : '<div class="adm__empty">No rep requests yet.</div>') +
+              '</div>' +
+            '</div>' +
+
+            // ---- Documents (private rep-docs bucket, category/subcategory tree) ----
+            cardHead('docs', 'Rep Portal', '', '', 'adm__head--sp') +
+            '<div ' + cardBodyAttrs('docs') + '>' +
+              '<div class="adm__msg" data-docmsg style="display:none"></div>' +
+              '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px">' +
+                '<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ink-3)">Category *' +
+                  '<select data-doccat-sel style="font-size:13px;padding:7px 9px;border:1px solid var(--rule-2);border-radius:6px;min-width:190px;background:var(--bg)"></select>' +
+                  '<input data-doccat-new placeholder="New category name" autocomplete="off" style="display:none;margin-top:6px;font-size:13px;padding:7px 9px;border:1px solid var(--rule-2);border-radius:6px;min-width:190px" />' +
+                '</label>' +
+                '<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ink-3)">Subcategory (optional)' +
+                  '<select data-docsub-sel style="font-size:13px;padding:7px 9px;border:1px solid var(--rule-2);border-radius:6px;min-width:190px;background:var(--bg)"></select>' +
+                  '<input data-docsub-new placeholder="New subcategory name" autocomplete="off" style="display:none;margin-top:6px;font-size:13px;padding:7px 9px;border:1px solid var(--rule-2);border-radius:6px;min-width:190px" />' +
+                '</label>' +
+                '<input type="file" data-docfile accept="application/pdf" multiple style="font-size:12px" />' +
+                '<button class="btn btn--primary btn--sm" data-docupload>Upload</button>' +
+              '</div>' +
+              '<div class="adm__wrap"><div data-doclist>' +
+                '<div class="adm__empty">Loading…</div>' +
+              '</div></div>' +
+            '</div>' +
+          '</div>';
+
+        root.querySelector('[data-sign-out]').addEventListener('click', function () {
+          window.TBWCAuth.signOut().then(function () { window.location.href = 'index.html'; });
+        });
+        root.addEventListener('click', onAction);
+        root.querySelector('[data-docupload]').addEventListener('click', onUpload);
+        root.addEventListener('click', onDocDelete);
+        root.addEventListener('click', onDocRename);
+        root.querySelector('[data-doccat-sel]').addEventListener('change', onCatChange);
+        root.querySelector('[data-docsub-sel]').addEventListener('change', onSubChange);
+        var ordersGrid = window.TBWCOrdersGrid.create({
+          sb: sb,
+          mode: 'admin',
+          container: root.querySelector('[data-orders-wrap]'),
+          msgEl: root.querySelector('[data-ordersmsg]'),
+          countEl: root.querySelector('[data-orders-count]')
+        });
+        root.querySelector('[data-order-add]').addEventListener('click', ordersGrid.addNew);
+        root.addEventListener('click', onCardToggle);
+        loadDocs();
+        ordersGrid.load();
+      }
+
+      var DOCS_BUCKET = (window.TBWCAuth && window.TBWCAuth.DOCS_BUCKET) || 'rep-docs';
+      var docTree = { rootFiles: [], categories: [] };
+
+      function fmtSize(bytes) {
+        if (!bytes && bytes !== 0) return '';
+        var u = ['B', 'KB', 'MB', 'GB'], i = 0, n = bytes;
+        while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+        return (i === 0 ? n : n.toFixed(1)) + ' ' + u[i];
+      }
+
+      function showDocMsg(text, isError) {
+        var el = root.querySelector('[data-docmsg]');
+        if (!el) return;
+        el.textContent = text || '';
+        el.style.display = text ? 'block' : 'none';
+        el.style.color = isError ? '#c0392b' : '#1e7e34';
+      }
+
+      // Category names must not contain "/" (that would fake extra nesting) or leading dots.
+      function cleanSeg(s) {
+        return String(s || '').trim().replace(/[\/\\]+/g, ' ').replace(/^\.+/, '').trim();
+      }
+
+      var NEW = '__new__';
+
+      function fillSelect(sel, values, placeholder, newLabel) {
+        var opts = '<option value="">' + esc(placeholder) + '</option>';
+        opts += values.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+        opts += '<option value="' + NEW + '">＋ ' + esc(newLabel) + '</option>';
+        sel.innerHTML = opts;
+      }
+
+      // Populate the category dropdown from the current tree; reset subcategory.
+      function populateCatSelect() {
+        var sel = root.querySelector('[data-doccat-sel]');
+        var prev = sel.value;
+        fillSelect(sel, docTree.categories.map(function (c) { return c.name; }), '— Select category —', 'New category…');
+        if (prev && (prev === NEW || docTree.categories.some(function (c) { return c.name === prev; }))) sel.value = prev;
+        onCatChange();
+      }
+
+      // Subcategory options depend on the chosen category.
+      function populateSubSelect() {
+        var catSel = root.querySelector('[data-doccat-sel]');
+        var sub = root.querySelector('[data-docsub-sel]');
+        var cat = catSel.value;
+        var match = docTree.categories.filter(function (c) { return c.name === cat; })[0];
+        var subs = match ? match.subs.map(function (s) { return s.name; }) : [];
+        fillSelect(sub, subs, '(none)', 'New subcategory…');
+        onSubChange();
+      }
+
+      function onCatChange() {
+        var sel = root.querySelector('[data-doccat-sel]');
+        var isNew = sel.value === NEW;
+        root.querySelector('[data-doccat-new]').style.display = isNew ? 'block' : 'none';
+        // New/blank category => free subcategory (no existing subs to list).
+        populateSubSelect();
+      }
+
+      function onSubChange() {
+        var sel = root.querySelector('[data-docsub-sel]');
+        root.querySelector('[data-docsub-new]').style.display = sel.value === NEW ? 'block' : 'none';
+      }
+
+      // Resolve a select-or-new pair to a clean segment string ('' if none).
+      function segFrom(selSelector, newSelector) {
+        var sel = root.querySelector(selSelector);
+        if (sel.value === NEW) return cleanSeg(root.querySelector(newSelector).value);
+        return cleanSeg(sel.value);
+      }
+
+      function fileNode(f) {
+        return '<div class="tree__file">' +
+          '<span class="ico">📄</span>' +
+          '<span class="fname">' + esc(f.name) + '</span>' +
+          '<span class="fmeta">' + fmtSize(f.size) +
+            ' &nbsp;<a href="#" class="act" data-docrename="' + esc(f.path) + '">rename</a>' +
+            '<a href="#" class="act" data-docdel="' + esc(f.path) + '">delete</a>' +
+          '</span>' +
+        '</div>';
+      }
+
+      function countFiles(node) {
+        var n = (node.files || []).length;
+        (node.subs || []).forEach(function (s) { n += (s.files || []).length; });
+        return n;
+      }
+
+      function folderNode(name, count, inner) {
+        return '<details>' +
+          '<summary><span class="caret">▶</span><span class="ico">📁</span>' + esc(name) +
+          '<span class="count">' + count + '</span></summary>' +
+          '<div class="tree__children">' + inner + '</div>' +
+        '</details>';
+      }
+
+      function loadDocs() {
+        var list = root.querySelector('[data-doclist]');
+        if (!list) return;
+        window.TBWCAuth.listDocsTree(DOCS_BUCKET).then(function (tree) {
+          docTree = tree;
+          populateCatSelect();
+
+          var html = '';
+          tree.rootFiles.forEach(function (f) { html += fileNode(f); });
+          tree.categories.forEach(function (c) {
+            var inner = '';
+            c.files.forEach(function (f) { inner += fileNode(f); });
+            c.subs.forEach(function (s) {
+              inner += folderNode(s.name, s.files.length, s.files.map(fileNode).join(''));
+            });
+            html += folderNode(c.name, countFiles(c), inner);
+          });
+
+          list.className = 'tree';
+          list.innerHTML = html || '<div class="tree__empty">No documents yet.</div>';
+        }).catch(function (err) {
+          list.innerHTML = '<div class="tree__empty">' + esc(err && err.message || 'Could not load documents') + '</div>';
+        });
+      }
+
+      function onUpload() {
+        var input = root.querySelector('[data-docfile]');
+        var btn = root.querySelector('[data-docupload]');
+
+        var cat = segFrom('[data-doccat-sel]', '[data-doccat-new]');
+        var sub = segFrom('[data-docsub-sel]', '[data-docsub-new]');
+        if (!cat) { showDocMsg('Category is required — pick one or add new.', true); root.querySelector('[data-doccat-sel]').focus(); return; }
+        if (!input || !input.files || !input.files.length) { showDocMsg('Choose a file first.', true); return; }
+
+        var prefix = cat + (sub ? '/' + sub : '');
+        btn.disabled = true;
+        showDocMsg('Uploading…', false);
+        var files = Array.prototype.slice.call(input.files);
+        Promise.all(files.map(function (file) {
+          return sb.storage.from(DOCS_BUCKET).upload(prefix + '/' + file.name, file, {
+            upsert: true, contentType: file.type || 'application/pdf'
+          });
+        })).then(function (results) {
+          btn.disabled = false;
+          input.value = '';
+          var failed = results.filter(function (r) { return r.error; });
+          if (failed.length) { showDocMsg(failed[0].error.message, true); }
+          else { showDocMsg('Uploaded ' + files.length + ' file(s) to ' + prefix, false); }
+          loadDocs();
+        });
+      }
+
+      function onDocDelete(e) {
+        var btn = e.target.closest('[data-docdel]');
+        if (!btn) return;
+        e.preventDefault();
+        var path = btn.getAttribute('data-docdel');
+        if (!window.confirm('Delete "' + path + '"? Reps will no longer see it.')) return;
+        btn.disabled = true;
+        sb.storage.from(DOCS_BUCKET).remove([path]).then(function (res) {
+          if (res.error) { btn.disabled = false; showDocMsg(res.error.message, true); return; }
+          showDocMsg('Deleted ' + path, false);
+          loadDocs();
+        });
+      }
+
+      function onDocRename(e) {
+        var btn = e.target.closest('[data-docrename]');
+        if (!btn) return;
+        e.preventDefault();
+        var path = btn.getAttribute('data-docrename');
+        var slash = path.lastIndexOf('/');
+        var dir = slash >= 0 ? path.slice(0, slash) : '';
+        var oldName = slash >= 0 ? path.slice(slash + 1) : path;
+
+        var next = window.prompt('Rename file:', oldName);
+        if (next == null) return;                       // cancelled
+        next = cleanSeg(next);                           // no slashes/leading dots
+        if (!next) { showDocMsg('Name cannot be empty.', true); return; }
+        if (!/\.[^.]+$/.test(next)) {                    // keep original extension if none typed
+          var ext = (oldName.match(/\.[^.]+$/) || [''])[0];
+          next += ext;
+        }
+        if (next === oldName) return;                    // unchanged
+
+        var newPath = dir ? dir + '/' + next : next;
+        btn.disabled = true;
+        sb.storage.from(DOCS_BUCKET).move(path, newPath).then(function (res) {
+          if (res.error) { btn.disabled = false; showDocMsg(res.error.message, true); return; }
+          showDocMsg('Renamed to ' + newPath, false);
+          loadDocs();
+        });
+      }
+
+      var msgTimer;
+      function showMsg(text, isError) {
+        var el = root.querySelector('[data-msg]');
+        if (!el) return;
+        el.textContent = text;
+        el.style.display = text ? 'block' : 'none';
+        el.style.color = isError ? '#c0392b' : '#1e7e34';
+        clearTimeout(msgTimer);
+        if (text) msgTimer = setTimeout(function () { el.style.display = 'none'; }, 4000);
+      }
+
+      function onAction(e) {
+        var btn = e.target.closest('[data-approve],[data-revoke]');
+        if (!btn) return;
+        var approve = btn.hasAttribute('data-approve');
+        var id = btn.getAttribute(approve ? 'data-approve' : 'data-revoke');
+        btn.disabled = true;
+        sb.from('reps').update({ approved: approve }).eq('id', id).select('email').single()
+          .then(function (res) {
+            if (res.error) { btn.disabled = false; showMsg(res.error.message, true); return; }
+            showMsg((approve ? 'Approved ' : 'Revoked ') + res.data.email, false);
+            load(); // refresh list
+          });
+      }
+
+      var currentAdminEmail = '';
+      var currentAdminName = '';
+      function load() {
+        sb.from('reps')
+          .select('id,email,first_name,last_name,agency_name,approved,is_admin,created_at')
+          .order('approved', { ascending: true })   // pending first
+          .order('created_at', { ascending: false })
+          .then(function (res) {
+            if (res.error) { renderGate('Could not load reps: ' + res.error.message); return; }
+            render(res.data || [], currentAdminEmail, currentAdminName);
+          });
+      }
+
+      if (!sb) { renderGate('Auth unavailable — try again in a moment.'); return; }
+
+      window.TBWCAuth.getSession().then(function (res) {
+        var session = res.data && res.data.session;
+        if (!session) { window.location.href = 'index.html'; return; }
+        currentAdminEmail = session.user.email;
+
+        // Gate on is_admin (own row is readable via reps_select_own).
+        sb.from('reps').select('is_admin,approved,first_name,last_name').eq('id', session.user.id).single().then(function (me) {
+          if (me.error || !me.data || !me.data.is_admin) {
+            renderGate('Not authorized — this page is for administrators only.');
+            return;
+          }
+          currentAdminName = [me.data.first_name, me.data.last_name].filter(Boolean).join(' ');
+          load();
+        });
+      });
+    })();
+  </script>
+</body>
+
+</html>
