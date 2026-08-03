@@ -1779,7 +1779,7 @@ h1, h2, h3, h4 {
 .portal__body {
   flex: 1;
   overflow-y: auto;
-  padding: clamp(28px, 4vw, 56px) clamp(20px, 3vw, 40px);
+  padding: 20px clamp(20px, 3vw, 40px) clamp(28px, 4vw, 56px);
   background: var(--bg-2);
 }
 .portal__grid {
