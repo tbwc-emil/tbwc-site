@@ -1,0 +1,16 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # Every 3 days at 12:00 UTC — well under Supabase's 7-day free-tier pause window
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase project
+        run: |
+          curl -sf "https://detwkqhqekaiyuajixhs.supabase.co/auth/v1/health" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}"
