@@ -4,6 +4,7 @@
   "private": true,
   "description": "Local admin scripts for the TBWC Supabase database",
   "scripts": {
+    "dev": "npx serve .",
     "db:test": "node scripts/db-test.js",
     "db:schema": "node scripts/apply-schema.js",
     "rep:approve": "node scripts/approve-rep.js",
