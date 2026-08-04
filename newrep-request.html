@@ -41,7 +41,13 @@
     #nr-address { gap: 8px; }
     #nr-address .nr-field { gap: 2px; }
     #nr-address .nr-sub { margin-top: 0; }
-</style>
+    .nr-wrap { max-width: 860px; }
+    .nr-title { margin-bottom: 14px; text-align: center; }
+    .nr-flex-2 { flex: 2 1 240px; }
+    .nr-flex-0 { flex: 0 1 120px; }
+    #nr-msg { display: none; font-size: 14px; color: #c0392b; }
+    #nr-done { display: none; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -52,126 +58,115 @@
   <script src="nav.js"></script>
 
   <main>
-    <section class="row">
-      <div class="wrap" style="max-width: 860px;">
-        <h1 class="h2" style="margin-bottom: 14px;">New TBWC Rep Request</h1>
-        <p class="sec-hd__sub" style="margin-bottom: 8px;">
-          Thank you for requesting access to the TBWC Technology Rep Portal, where current sales &amp;
-          marketing collateral, pricing, tech support and application assistance are made available on demand.
-        </p>
-        <p class="sec-hd__sub" style="margin-bottom: 32px;">
-          The TBWC Rep Portal is for the exclusive use of our Manufacturer's Representatives and their
-          authorized personnel.
-        </p>
-
-        <form class="nr-form" id="nr-form" autocomplete="on" novalidate>
-          <fieldset class="nr-fieldset">
-            <legend>Name <span class="req">*</span></legend>
-            <div class="nr-row">
-              <div class="nr-field">
-                <input class="nr-input" type="text" name="firstName" placeholder="First Name" required />
-                <span class="nr-sub">First Name</span>
-              </div>
-              <div class="nr-field">
-                <input class="nr-input" type="text" name="lastName" placeholder="Last Name" required />
-                <span class="nr-sub">Last Name</span>
-              </div>
-            </div>
-          </fieldset>
-
+    <div class="wrap nr-wrap">
+      <h1 class="h2 nr-title">Rep Request</h1>
+      <form class="nr-form" id="nr-form" autocomplete="on" novalidate>
+        <fieldset class="nr-fieldset">
+          <legend>Name <span class="req">*</span></legend>
           <div class="nr-row">
             <div class="nr-field">
-              <label for="nr-agency">Agency Name <span class="req">*</span></label>
-              <input class="nr-input" id="nr-agency" type="text" name="agencyName" required />
+              <input class="nr-input" type="text" name="firstName" placeholder="First Name" required />
+              <span class="nr-sub">First Name</span>
             </div>
             <div class="nr-field">
-              <label for="nr-title">Title / Position</label>
-              <input class="nr-input" id="nr-title" type="text" name="title" />
+              <input class="nr-input" type="text" name="lastName" placeholder="Last Name" required />
+              <span class="nr-sub">Last Name</span>
             </div>
           </div>
+        </fieldset>
 
+        <div class="nr-row">
           <div class="nr-field">
-            <label for="nr-email">Email <span class="req">*</span></label>
-            <input class="nr-input" id="nr-email" type="email" name="email" placeholder="example@example.com" required />
+            <label for="nr-agency">Agency Name <span class="req">*</span></label>
+            <input class="nr-input" id="nr-agency" type="text" name="agencyName" required />
           </div>
-
-          <div class="nr-row">
-            <div class="nr-field">
-              <label for="nr-pass">Password <span class="req">*</span></label>
-              <div class="nr-pass-wrap">
-                <input class="nr-input" id="nr-pass" type="password" name="password" minlength="8" required />
-                <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass" aria-label="Show password" aria-pressed="false"></button>
-              </div>
-            </div>
-            <div class="nr-field">
-              <label for="nr-pass2">Confirm password <span class="req">*</span></label>
-              <div class="nr-pass-wrap">
-                <input class="nr-input" id="nr-pass2" type="password" name="password2" minlength="8" required />
-                <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass2" aria-label="Show password" aria-pressed="false"></button>
-              </div>
-            </div>
-          </div>
-
-          <div class="nr-row">
-            <div class="nr-field" style="flex: 2 1 240px;">
-              <label for="nr-work">Work Phone</label>
-              <input class="nr-input" id="nr-work" type="tel" name="workPhone" />
-            </div>
-            <div class="nr-field" style="flex: 0 1 120px;">
-              <label for="nr-ext">Ext.</label>
-              <input class="nr-input" id="nr-ext" type="text" name="ext" inputmode="numeric" />
-            </div>
-            <div class="nr-field" style="flex: 2 1 240px;">
-              <label for="nr-mobile">Mobile</label>
-              <input class="nr-input" id="nr-mobile" type="tel" name="mobile" />
-            </div>
-          </div>
-
-          <fieldset class="nr-fieldset" id="nr-address">
-            <legend>Address <span class="req">*</span></legend>
-            <div class="nr-field">
-              <input class="nr-input" type="text" name="addr1" placeholder="Street Address" required />
-              <span class="nr-sub">Street Address</span>
-            </div>
-            <div class="nr-field">
-              <input class="nr-input" type="text" name="addr2" placeholder="Street Address Line 2" />
-              <span class="nr-sub">Street Address Line 2</span>
-            </div>
-            <div class="nr-row">
-              <div class="nr-field">
-                <input class="nr-input" type="text" name="city" placeholder="City" required />
-                <span class="nr-sub">City</span>
-              </div>
-              <div class="nr-field">
-                <input class="nr-input" type="text" name="state" placeholder="State / Province" required />
-                <span class="nr-sub">State / Province</span>
-              </div>
-              <div class="nr-field">
-                <input class="nr-input" type="text" name="postal" placeholder="Postal / Zip Code" required />
-                <span class="nr-sub">Postal / Zip Code</span>
-              </div>
-            </div>
-          </fieldset>
-
           <div class="nr-field">
-            <label for="nr-share">Please share a little bit about yourself &amp; your position.</label>
-            <textarea class="nr-textarea" id="nr-share" name="pleaseShare"></textarea>
+            <label for="nr-title">Title / Position</label>
+            <input class="nr-input" id="nr-title" type="text" name="title" />
           </div>
-
-          <div class="cf-turnstile" id="nr-turnstile" data-sitekey="0x4AAAAAAD9DfsCUphQNRuA6"></div>
-
-          <div id="nr-msg" style="display:none;font-size:14px;color:#c0392b"></div>
-
-          <div>
-            <button type="submit" class="btn btn--primary" id="nr-submit">Submit</button>
-          </div>
-        </form>
-
-        <div id="nr-done" style="display:none">
-          <p class="sec-hd__sub">Thanks — your request is in. An account manager will review it and approve portal access, usually within one business day. You'll be able to sign in from the site header once approved.</p>
         </div>
+
+        <div class="nr-field">
+          <label for="nr-email">Email <span class="req">*</span></label>
+          <input class="nr-input" id="nr-email" type="email" name="email" placeholder="example@example.com" required />
+        </div>
+
+        <div class="nr-row">
+          <div class="nr-field">
+            <label for="nr-pass">Password <span class="req">*</span></label>
+            <div class="nr-pass-wrap">
+              <input class="nr-input" id="nr-pass" type="password" name="password" minlength="8" required />
+              <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass" aria-label="Show password" aria-pressed="false"></button>
+            </div>
+          </div>
+          <div class="nr-field">
+            <label for="nr-pass2">Confirm password <span class="req">*</span></label>
+            <div class="nr-pass-wrap">
+              <input class="nr-input" id="nr-pass2" type="password" name="password2" minlength="8" required />
+              <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass2" aria-label="Show password" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nr-row">
+          <div class="nr-field nr-flex-2">
+            <label for="nr-work">Work Phone</label>
+            <input class="nr-input" id="nr-work" type="tel" name="workPhone" />
+          </div>
+          <div class="nr-field nr-flex-0">
+            <label for="nr-ext">Ext.</label>
+            <input class="nr-input" id="nr-ext" type="text" name="ext" inputmode="numeric" />
+          </div>
+          <div class="nr-field nr-flex-2">
+            <label for="nr-mobile">Mobile</label>
+            <input class="nr-input" id="nr-mobile" type="tel" name="mobile" />
+          </div>
+        </div>
+
+        <fieldset class="nr-fieldset" id="nr-address">
+          <legend>Address <span class="req">*</span></legend>
+          <div class="nr-field">
+            <input class="nr-input" type="text" name="addr1" placeholder="Street Address" required />
+            <span class="nr-sub">Street Address</span>
+          </div>
+          <div class="nr-field">
+            <input class="nr-input" type="text" name="addr2" placeholder="Street Address Line 2" />
+            <span class="nr-sub">Street Address Line 2</span>
+          </div>
+          <div class="nr-row">
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="city" placeholder="City" required />
+              <span class="nr-sub">City</span>
+            </div>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="state" placeholder="State / Province" required />
+              <span class="nr-sub">State / Province</span>
+            </div>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="postal" placeholder="Postal / Zip Code" required />
+              <span class="nr-sub">Postal / Zip Code</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="nr-field">
+          <label for="nr-share">Please share a little bit about yourself &amp; your position.</label>
+          <textarea class="nr-textarea" id="nr-share" name="pleaseShare"></textarea>
+        </div>
+
+        <div class="cf-turnstile" id="nr-turnstile" data-sitekey="0x4AAAAAAD9DfsCUphQNRuA6"></div>
+
+        <div id="nr-msg"></div>
+
+        <div>
+          <button type="submit" class="btn btn--primary" id="nr-submit">Submit</button>
+        </div>
+      </form>
+
+      <div id="nr-done">
+        <p class="sec-hd__sub">Thanks — your request is in. An account manager will review it and approve portal access, usually within one business day. You'll be able to sign in from the site header once approved.</p>
       </div>
-    </section>
+    </div>
   </main>
 
   <script>
