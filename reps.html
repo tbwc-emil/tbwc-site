@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     /* Page content darker (nav header stays standard/light) */
-    #root {
+    #root, #site-footer {
       --bg:        oklch(24% 0.01 260);
       --bg-2:      oklch(28% 0.01 260);
       --bg-inset:  oklch(31% 0.012 260);
@@ -94,74 +94,6 @@
 
     // ── NAV ────────────────────────────────────────────────────────────────────
 
-
-    // ── FOOTER ────────────────────────────────────────────────────────────────
-
-    function Footer() {
-      return (
-        <footer className="foot">
-          <div className="wrap">
-            <div className="foot__grid">
-              <div className="foot__col foot__brand">
-                <a href="index.html" className="brand">
-                  <img src="TBWC%20Technology%20Logo%20.png" alt="TBWC Technology" className="brand__logo-img" />
-                </a>
-                <p className="foot__tag">TTBWC Technology with precision since 2002.</p>
-              </div>
-              <div className="foot__col">
-                <h4>Support</h4>
-                <ul>
-                  <li><a href="https://tbwctechnology.com/tech-support/" target="_blank" rel="noopener noreferrer">Technical support</a></li>
-                  <li><a href="#">RMAs</a></li>
-                  <li><a href="#">Documentation</a></li>
-                  <li><a href="#">.......</a></li>
-                </ul>
-              </div>
-              <div className="foot__col">
-                <h4>Reps</h4>
-                <ul>
-                  <li><a href="#reps">Rep registration</a></li>
-                  <li><a href="#">Rep Portal</a></li>
-                  <li><a href="#">Territory map</a></li>
-                  <li><a href="#">......</a></li>
-                </ul>
-              </div>
-              <div className="foot__col">
-                <h4>Company</h4>
-                <ul>
-                  <li><a href="index.html#about">About</a></li>
-                  <li><a href="index.html#footer-contact">Contact</a></li>
-                  <li><a href="#">New customer</a></li>
-                  <li><a href="#">Careers</a></li>
-                </ul>
-              </div>
-              <div className="foot__col" id="footer-contact">
-                <h4>Contact Us</h4>
-                <ul>
-                  <li>
-                    <a href="tel:8885621810" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.6 4.9 2 2 0 0 1 3.58 2.72h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.28a16 16 0 0 0 6.13 6.13l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                      (888) 562-1810
-                    </a>
-                  </li>
-                  <li>
-                    <a href="mailto:info@TBWCinc.com" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                      info@TBWCinc.com
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="foot__bot">
-              <span>© 2026 TBWC TECHNOLOGY, INC. · ALL RIGHTS RESERVED.</span>
-              <span>LAS VEGAS, NV · ONTARIO, CA</span>
-            </div>
-          </div>
-        </footer>
-      );
-    }
 
     // ── REPRESENTATIVES ────────────────────────────────────────────────────────
 
@@ -582,7 +514,7 @@
                     y={c[1]}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    fontSize="7.5"
+                    fontSize="11"
                     fontWeight="700"
                     fill="rgba(255,255,255,0.92)"
                     style={{ pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.03em' }}
@@ -709,13 +641,14 @@
           <main>
             <RepsMap />
           </main>
-          <Footer />
         </>
       );
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
+  <div id="site-footer"></div>
+  <script src="footer.js"></script>
 </body>
 
 </html>
