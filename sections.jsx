@@ -589,7 +589,7 @@ function Footer() {
           <div className="foot__col">
             <h4>Reps</h4>
             <ul>
-              <li><a href="#reps">Become a rep</a></li>
+              <li><a href="#reps">Rep registration</a></li>
               <li><a href="#">Rep Portal</a></li>
               <li><a href="#">Co-op &amp; SPIFs</a></li>
               <li><a href="#">Territory map</a></li>

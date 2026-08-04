@@ -66,7 +66,6 @@ function AgencyCard({ a, highlighted, onClick }) {
             <span className="agency__person-role mono">Lead Rep</span>
           </div>
           <div className="agency__actions">
-            <a className="agency__phone mono" href={`tel:${a.phone.replace(/\D/g,'')}`} onClick={(e)=>e.stopPropagation()}>{a.phone}</a>
             <a className="agency__email mono" href="https://tbwctechnology.com/contacttbwc/" target="_blank" rel="noopener noreferrer" onClick={(e)=>e.stopPropagation()}>Email →</a>
           </div>
         </div>
@@ -175,7 +174,7 @@ function RepsMap() {
         {/* New-rep callout */}
         <div className="rmap__newrep">
           <div className="rmap__newrep-l">
-            <div className="kicker"><span className="num">/16</span> &nbsp; Become a representative</div>
+            <div className="kicker"><span className="num">/16</span> &nbsp; Rep registration</div>
             <h3 className="h2" style={{ fontSize: 'clamp(24px, 2.4vw, 36px)', marginTop: 6 }}>Looking to add TBWC to your line card?</h3>
           </div>
           <div className="rmap__newrep-r">

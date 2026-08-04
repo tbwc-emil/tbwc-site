@@ -57,7 +57,7 @@
             '</form>' +
             '<div class="portal-drop__links">' +
               '<a href="#" data-forgot-toggle>Forgot password?</a>' +
-              '<a href="newrep-request.html" class="btn btn--ghost btn--sm">Become a Rep</a>' +
+              '<a href="newrep-request.html" class="btn btn--ghost btn--sm">Rep Registration</a>' +
             '</div>' +
           '</div>' +
         '</div>' +

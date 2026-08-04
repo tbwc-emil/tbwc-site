@@ -11,6 +11,22 @@
     href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Page content darker (nav header stays standard/light) */
+    #root {
+      --bg:        oklch(24% 0.01 260);
+      --bg-2:      oklch(28% 0.01 260);
+      --bg-inset:  oklch(31% 0.012 260);
+      --ink:       oklch(96% 0.005 260);
+      --ink-2:     oklch(78% 0.01 260);
+      --ink-3:     oklch(58% 0.01 260);
+      --rule:      oklch(34% 0.008 260);
+      --rule-2:    oklch(40% 0.008 260);
+      --accent:    oklch(70% 0.18 258);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+  </style>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
     integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
     crossorigin="anonymous"></script>
@@ -104,7 +120,7 @@
               <div className="foot__col">
                 <h4>Reps</h4>
                 <ul>
-                  <li><a href="#reps">Become a rep</a></li>
+                  <li><a href="#reps">Rep registration</a></li>
                   <li><a href="#">Rep Portal</a></li>
                   <li><a href="#">Territory map</a></li>
                   <li><a href="#">......</a></li>
@@ -150,22 +166,24 @@
     // ── REPRESENTATIVES ────────────────────────────────────────────────────────
 
     const AGENCIES = [
-      { id: 'usnw', name: 'Unified Solutions NW', contact: 'Kevin Adams', phone: '(503) 624-8293', region: 'Pacific Northwest', territories: 'WA · OR · ID · MT · AK', states: ['WA', 'OR', 'ID', 'MT', 'AK'], logo: 'https://tbwctechnology.com/wp-content/uploads/USNW.png', url: 'https://www.usxnw.com/' },
-      { id: 'dz', name: 'D.Z. Cook', contact: 'Steve Mobley', phone: '(510) 293-6810', region: 'Pacific', territories: 'Northern California · Northern Nevada', states: ['CA', 'NV'], logo: 'https://tbwctechnology.com/wp-content/uploads/DZ-e1710094110554-1024x315.png', url: 'https://dzcook.com/' },
-      { id: 'ba', name: 'Blanchard Associates', contact: 'James Blanchard', phone: '(909) 974-0111', region: 'Pacific', territories: 'Southern CA · Southern NV · HI · AZ', states: ['CA', 'NV', 'HI', 'AZ'], logo: 'https://tbwctechnology.com/wp-content/uploads/BA-e1710094190784-1024x825.png', url: 'https://www.blanchardassociates.com/' },
-      { id: 'intriq', name: 'Intriq', contact: 'Mark Jeffrey', phone: '(303) 758-5530', region: 'Mountain', territories: 'CO · UT · WY · SD', states: ['CO', 'UT', 'WY', 'SD'], logo: 'https://tbwctechnology.com/wp-content/uploads/intriq-1024x545.jpg', url: 'https://www.intriq.com/' },
-      { id: 'meglio', name: 'Meglio & Associates', contact: 'Dave Meglio', phone: '(314) 524-4424', region: 'Central', territories: 'MO · KS · Southern IL', states: ['MO', 'KS'], logo: 'https://tbwctechnology.com/wp-content/uploads/meglio-e1710094088378-1024x656.png', url: 'https://www.meglio.com/' },
-      { id: 'mercer', name: 'Mercer Sales', contact: 'Steve Mercer', phone: '(920) 915-6223', region: 'Central', territories: 'WI · U.P. Michigan', states: ['WI', 'MI'], logo: 'https://tbwctechnology.com/wp-content/uploads/Mercer-e1710094071367-1024x431.png', url: 'https://mercersalesinc.com/' },
-      { id: 'am', name: 'A&M', contact: 'Ray Doerrer', phone: '(630) 501-0880', region: 'Great Lakes', territories: '', states: [], logo: 'https://tbwctechnology.com/wp-content/uploads/AM-e1710094211761-1024x521.png' },
-      { id: 'pt', name: 'Power Techniques', contact: 'Ken Piron', phone: '(248) 291-6213', region: 'Great Lakes', territories: 'Michigan', states: ['MI'], logo: 'https://tbwctechnology.com/wp-content/uploads/PT.png', url: 'https://powertechniquesinc.com/' },
-      { id: 'invictus', name: 'Invictus', contact: 'Bill Holton', phone: '(540) 239-1033', region: 'Mid-Atlantic', territories: 'West Virginia · Southern Virginia', states: ['WV', 'VA'], logo: 'https://tbwctechnology.com/wp-content/uploads/invictus-1024x298.jpeg', url: 'https://myinvictussales.com/' },
-      { id: 'phoenix', name: 'Phoenix Sales and Marketing', contact: 'Bob Fern', phone: '(703) 282-4597', region: 'Mid-Atlantic', territories: 'Northern Virginia · MD · DC', states: ['VA', 'MD', 'DC'], logo: 'https://tbwctechnology.com/wp-content/uploads/Phoenix-e1710094055127-1024x479.png', url: 'https://www.myphoenixsales.com/' },
-      { id: 'pollart', name: 'Pollart Sales', contact: 'Eric Vogelsong', phone: '(609) 238-8414', region: 'Mid-Atlantic', territories: 'Eastern PA · Southern NJ · DE', states: ['DE'], logo: 'https://tbwctechnology.com/wp-content/uploads/Pollart-e1710094039654-1024x439.png', url: 'https://www.pollartsales.com/' },
-      { id: 'damin', name: 'Damin Sales', contact: 'Justin Felber', phone: '(917) 414-0098', region: 'Northeast', territories: 'NYC · Long Island · Westchester · Rockland · Orange · Putnam · Northern & Central NJ', states: ['NY', 'NJ'], logo: 'https://tbwctechnology.com/wp-content/uploads/Damin-Sales.png', url: 'https://www.daminsales.com/' },
-      { id: 'sss', name: 'Submeter Service Solutions', contact: "Jay O'Connor", phone: '(508) 326-2708', region: 'Northeast', territories: 'MA · CT · ME · NH · VT · RI · Upstate NY', states: ['MA', 'CT', 'ME', 'NH', 'VT', 'RI', 'NY'], logo: 'https://tbwctechnology.com/wp-content/uploads/SSS-1024x380.png', url: 'https://www.submeterservicesolutions.com/' },
-      { id: 'ues', name: 'United Electrical Sales', contact: 'Tom Holcombe', phone: '(336) 803-8338', region: 'Southeast', territories: 'NC · SC · GA · FL · AL · MS', states: ['NC', 'SC', 'GA', 'FL', 'AL', 'MS'], logo: 'https://tbwctechnology.com/wp-content/uploads/UES-e1710093979574-1024x377.png', url: 'https://uesrep.com/' },
-      { id: 'bellmccoy', name: 'Bell & McCoy', contact: 'Scott Thomas', phone: '(972) 489-2879', region: 'South Central', territories: 'TX · OK · AR · LA · MS · TN · NM', states: ['TX', 'OK', 'AR', 'LA', 'MS', 'TN', 'NM'], logo: 'https://tbwctechnology.com/wp-content/uploads/Bell-and-Mccoy-e1710094170962-1024x433.png', url: 'https://www.bellandmccoy.com/' },
+      { id: 'usnw', name: 'Unified Solutions NW', phone: '(503) 624-8293', region: 'Pacific Northwest', territories: 'WA · OR · ID · MT · AK', states: ['WA', 'OR', 'ID', 'MT', 'AK'], logo: 'https://tbwctechnology.com/wp-content/uploads/USNW.png', url: 'https://www.usxnw.com/' },
+      { id: 'dz', name: 'D.Z. Cook', phone: '(510) 293-6810', region: 'Pacific', territories: 'Northern California · Northern Nevada', states: ['CA', 'NV'], logo: 'https://tbwctechnology.com/wp-content/uploads/DZ-e1710094110554-1024x315.png', url: 'https://dzcook.com/' },
+      { id: 'ba', name: 'Blanchard Associates', phone: '(909) 974-0111', region: 'Pacific', territories: 'Southern CA · Southern NV · HI · AZ', states: ['CA', 'NV', 'HI', 'AZ'], logo: 'https://tbwctechnology.com/wp-content/uploads/BA-e1710094190784-1024x825.png', url: 'https://www.blanchardassociates.com/' },
+      { id: 'intriq', name: 'Intriq', phone: '(303) 758-5530', region: 'Mountain', territories: 'CO · UT · WY · SD', states: ['CO', 'UT', 'WY', 'SD'], logo: 'https://tbwctechnology.com/wp-content/uploads/intriq-1024x545.jpg', url: 'https://www.intriq.com/' },
+      { id: 'meglio', name: 'Meglio & Associates', phone: '(314) 524-4424', region: 'Central', territories: 'MO · KS · Southern IL', states: ['MO', 'KS'], logo: 'https://tbwctechnology.com/wp-content/uploads/meglio-e1710094088378-1024x656.png', url: 'https://www.meglio.com/' },
+      { id: 'mercer', name: 'Mercer Sales', phone: '(920) 915-6223', region: 'Central', territories: 'WI · U.P. Michigan', states: ['WI', 'MI'], logo: 'https://tbwctechnology.com/wp-content/uploads/Mercer-e1710094071367-1024x431.png', url: 'https://mercersalesinc.com/' },
+      { id: 'am', name: 'A&M', phone: '(630) 501-0880', region: 'Great Lakes', territories: '', states: [], logo: 'https://tbwctechnology.com/wp-content/uploads/AM-e1710094211761-1024x521.png' },
+      { id: 'pt', name: 'Power Techniques', phone: '(248) 291-6213', region: 'Great Lakes', territories: 'Michigan', states: ['MI'], logo: 'https://tbwctechnology.com/wp-content/uploads/PT.png', url: 'https://powertechniquesinc.com/' },
+      { id: 'invictus', name: 'Invictus', phone: '(540) 239-1033', region: 'Mid-Atlantic', territories: 'West Virginia · Southern Virginia', states: ['WV', 'VA'], logo: 'https://tbwctechnology.com/wp-content/uploads/invictus-1024x298.jpeg', url: 'https://myinvictussales.com/' },
+      { id: 'phoenix', name: 'Phoenix Sales and Marketing', phone: '(703) 282-4597', region: 'Mid-Atlantic', territories: 'Northern Virginia · MD · DC', states: ['VA', 'MD', 'DC'], logo: 'https://tbwctechnology.com/wp-content/uploads/Phoenix-e1710094055127-1024x479.png', url: 'https://www.myphoenixsales.com/' },
+      { id: 'pollart', name: 'Pollart Sales', phone: '(609) 238-8414', region: 'Mid-Atlantic', territories: 'Eastern PA · Southern NJ · DE', states: ['DE'], logo: 'https://tbwctechnology.com/wp-content/uploads/Pollart-e1710094039654-1024x439.png', url: 'https://www.pollartsales.com/' },
+      { id: 'damin', name: 'Damin Sales', phone: '(917) 414-0098', region: 'Northeast', territories: 'NYC · Long Island · Westchester · Rockland · Orange · Putnam · Northern & Central NJ', states: ['NY', 'NJ'], logo: 'https://tbwctechnology.com/wp-content/uploads/Damin-Sales.png', url: 'https://www.daminsales.com/' },
+      { id: 'sss', name: 'Submeter Service Solutions', phone: '(508) 326-2708', region: 'Northeast', territories: 'MA · CT · ME · NH · VT · RI · Upstate NY', states: ['MA', 'CT', 'ME', 'NH', 'VT', 'RI', 'NY'], logo: 'https://tbwctechnology.com/wp-content/uploads/SSS-1024x380.png', url: 'https://www.submeterservicesolutions.com/' },
+      { id: 'ues', name: 'United Electrical Sales', phone: '(336) 803-8338', region: 'Southeast', territories: 'NC · SC · GA · FL · AL · MS', states: ['NC', 'SC', 'GA', 'FL', 'AL', 'MS'], logo: 'https://tbwctechnology.com/wp-content/uploads/UES-e1710093979574-1024x377.png', url: 'https://uesrep.com/' },
+      { id: 'bellmccoy', name: 'Bell & McCoy', phone: '(972) 489-2879', region: 'South Central', territories: 'TX · OK · AR · LA · MS · TN · NM', states: ['TX', 'OK', 'AR', 'LA', 'MS', 'TN', 'NM'], logo: 'https://tbwctechnology.com/wp-content/uploads/Bell-and-Mccoy-e1710094170962-1024x433.png', url: 'https://www.bellandmccoy.com/' },
     ];
+
+    const REGIONS = ['Pacific Northwest', 'Pacific', 'Mountain', 'Central', 'Great Lakes', 'South Central', 'Southeast', 'Mid-Atlantic', 'Northeast'];
 
     const STATE_TO_AGENCY = (() => {
       const m = {};
@@ -211,15 +229,6 @@
               <h4 className="agency__name">{a.name}</h4>
             </div>
             <div className="agency__terr">{a.territories}</div>
-            <div className="agency__contact">
-              <div className="agency__person">
-                <span className="agency__person-name">{a.contact}</span>
-              </div>
-              <div className="agency__actions">
-                <a className="agency__phone mono" href={`tel:${a.phone.replace(/\D/g, '')}`} onClick={(e) => e.stopPropagation()}>{a.phone}</a>
-                <a className="agency__email mono" href="https://tbwctechnology.com/contacttbwc/" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Email →</a>
-              </div>
-            </div>
           </div>
         </article>
       );
@@ -279,8 +288,6 @@
       if (!pathFn || !features.length) {
         return <div className="usmap"><div className="usmap__loading">Loading territory map…</div></div>;
       }
-
-      const repList = AGENCIES.filter(a => a.states.length > 0).slice().sort((a, b) => a.contact.localeCompare(b.contact));
 
       return (
         <div className="usmap" ref={containerRef}>
@@ -600,14 +607,6 @@
               </div>
             )}
           </div>
-          <div className="usmap__legend">
-            {repList.map(a => (
-              <span key={a.id} className="usmap__legend-item" style={{ cursor: 'pointer' }} onClick={() => onSelect && onSelect(a)}>
-                <span className="usmap__legend-dot" style={{ background: REP_COLORS[a.id] }} />
-                {a.contact}
-              </span>
-            ))}
-          </div>
         </div>
       );
     }
@@ -640,9 +639,9 @@
 
       const q = query.trim().toLowerCase();
       const filtered = q
-        ? AGENCIES.filter(a => (a.name + ' ' + a.contact + ' ' + a.territories + ' ' + a.states.join(' ')).toLowerCase().includes(q))
+        ? AGENCIES.filter(a => (a.name + ' ' + a.territories + ' ' + a.states.join(' ')).toLowerCase().includes(q))
         : AGENCIES;
-      const sorted = [...filtered].sort((a, b) => a.contact.localeCompare(b.contact));
+      const grouped = REGIONS.map(r => [r, filtered.filter(a => a.region === r).sort((a, b) => a.name.localeCompare(b.name))]).filter(([, list]) => list.length);
 
       return (
         <section id="reps" className="row" style={{ paddingTop: 'clamp(12px, 2vw, 24px)' }}>
@@ -655,17 +654,26 @@
             <USMapSVG highlightId={activeAgency} onSelect={onMapSelect} />
 
             <div className="repdir">
-              <div className="repgrp__grid">
-                {sorted.map(a => <AgencyCard key={a.id} a={a} highlighted={activeAgency === a.id} onClick={() => setActiveAgency(activeAgency === a.id ? null : a.id)} />)}
-              </div>
-              {!sorted.length && (
+              {grouped.map(([region, list]) => (
+                <div className="repgrp" key={region}>
+                  <div className="repgrp__hd">
+                    <span className="repgrp__hd-name">{region}</span>
+                    <span className="repgrp__hd-count mono">{list.length} {list.length === 1 ? 'agency' : 'agencies'}</span>
+                    <span className="repgrp__hd-states mono">{[...new Set(list.flatMap(a => a.states))].join(' · ')}</span>
+                  </div>
+                  <div className="repgrp__grid">
+                    {list.map(a => <AgencyCard key={a.id} a={a} highlighted={activeAgency === a.id} onClick={() => setActiveAgency(activeAgency === a.id ? null : a.id)} />)}
+                  </div>
+                </div>
+              ))}
+              {!grouped.length && (
                 <div className="repdir__empty mono">No agencies match "{query}". Try a state code or partial name.</div>
               )}
             </div>
 
             <div className="rmap__newrep">
               <div className="rmap__newrep-l">
-                <div className="kicker"><span className="num">-</span> &nbsp; Become a representative</div>
+                <div className="kicker"><span className="num">-</span> &nbsp; Rep registration</div>
                 <h3 className="h2" style={{ fontSize: 'clamp(24px, 2.4vw, 36px)', marginTop: 6 }}>Looking to add TBWC to your line card?</h3>
               </div>
               <div className="rmap__newrep-r">
