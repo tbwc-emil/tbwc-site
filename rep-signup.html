@@ -152,11 +152,6 @@
           </div>
         </fieldset>
 
-        <div class="nr-field">
-          <label for="nr-share">Please share a little bit about yourself &amp; your position.</label>
-          <textarea class="nr-textarea" id="nr-share" name="pleaseShare"></textarea>
-        </div>
-
         <div id="nr-msg"></div>
 
         <div>
@@ -177,6 +172,7 @@
       var msgEl = document.getElementById('nr-msg');
       var submitBtn = document.getElementById('nr-submit');
       var inviteToken = new URLSearchParams(window.location.search).get('token');
+      var leadAbout = '';
 
       function showInvalid(text) {
         statusEl.textContent = text;
@@ -237,7 +233,7 @@
           city: f('city'),
           state: f('state'),
           postal: f('postal'),
-          about: f('pleaseShare'),
+          about: leadAbout,
           inviteToken: inviteToken
         }).then(function (res) {
           submitBtn.disabled = false;
@@ -274,7 +270,7 @@
         form.elements.lastName.value = lead.lastName || '';
         form.elements.email.value = lead.email || '';
         form.elements.mobile.value = lead.phone || '';
-        form.elements.pleaseShare.value = lead.about || '';
+        leadAbout = lead.about || '';
         statusEl.style.display = 'none';
         form.style.display = 'flex';
       }, function () {

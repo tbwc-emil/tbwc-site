@@ -183,7 +183,7 @@
             '<td>' + esc(r.agency_name || '—') + '</td>' +
             '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + fmtDate(r.created_at) + '</td>' +
             '<td>' + statusBadge + '</td>' +
-            '<td><div class="adm__act">' + action + '</div></td>' +
+            '<td><div class="adm__act">' + action + '<button class="btn btn--ghost btn--sm" data-rep-delete="' + r.id + '">Delete</button></div></td>' +
           '</tr>';
         }).join('');
 
@@ -484,6 +484,20 @@
       }
 
       function onAction(e) {
+        var delBtn = e.target.closest('[data-rep-delete]');
+        if (delBtn) {
+          var delId = delBtn.getAttribute('data-rep-delete');
+          confirmDialog('Delete this rep?', 'This cannot be undone.').then(function (ok) {
+            if (!ok) return;
+            delBtn.disabled = true;
+            sb.from('reps').delete().eq('id', delId).then(function (res) {
+              if (res.error) { delBtn.disabled = false; showMsg(res.error.message, true); return; }
+              showMsg('Deleted.', false);
+              load();
+            });
+          });
+          return;
+        }
         var btn = e.target.closest('[data-approve],[data-revoke]');
         if (!btn) return;
         var approve = btn.hasAttribute('data-approve');

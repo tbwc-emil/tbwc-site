@@ -52,6 +52,11 @@ drop policy if exists reps_update_admin on public.reps;
 create policy reps_update_admin on public.reps
   for update using (public.is_admin()) with check (public.is_admin());
 
+-- Admins may delete rep rows (remove a rep from the portal).
+drop policy if exists reps_delete_admin on public.reps;
+create policy reps_delete_admin on public.reps
+  for delete using (public.is_admin());
+
 -- No client INSERT policy on purpose:
 --  * The reps row is created by the trigger below (runs as owner), not the client.
 --  * approved stays false; a non-admin client has no update policy, so it cannot self-approve.
