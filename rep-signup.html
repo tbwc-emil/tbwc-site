@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Complete Registration — TBWC Technology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .nr-form { display: flex; flex-direction: column; gap: 22px; max-width: 640px; }
+    .nr-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .nr-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    /* Horizontal distribution only applies inside a row; standalone fields keep natural height. */
+    .nr-row > .nr-field { flex: 1 1 200px; }
+    .nr-field > label { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--ink-2); }
+    .nr-field .req { color: #c0392b; }
+    .nr-input, .nr-textarea {
+      font: inherit; font-size: 15px; color: var(--ink);
+      background: var(--bg); border: 1px solid var(--rule-2); border-radius: 10px;
+      padding: 11px 13px; width: 100%; box-sizing: border-box; }
+    .nr-input:focus, .nr-textarea:focus { outline: none; border-color: var(--accent, #2A6FDB); }
+    .nr-input:disabled { color: var(--ink-3); background: var(--bg-inset, var(--bg)); }
+    .nr-textarea { resize: vertical; min-height: 120px; }
+    .nr-fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .nr-fieldset > legend { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--ink-2); padding: 0; margin-bottom: 6px; }
+    .nr-pass-wrap { position: relative; }
+    .nr-pass-wrap .nr-input { padding-right: 44px; }
+    .nr-pass-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      display: flex; align-items: center; justify-content: center; background: none; border: 0;
+      padding: 7px; margin: 0; cursor: pointer; color: var(--ink-3); border-radius: 7px; }
+    .nr-pass-toggle:hover { color: var(--ink-2); }
+    .nr-pass-toggle:focus-visible { outline: 2px solid var(--accent, #2A6FDB); outline-offset: 1px; }
+    /* Tighten the stacked street-address lines. */
+    #nr-address { gap: 8px; }
+    #nr-address .nr-field { gap: 2px; }
+    #nr-address .nr-sub { margin-top: 0; }
+    .nr-wrap { max-width: 860px; }
+    .nr-title { margin-bottom: 14px; text-align: center; }
+    .nr-flex-2 { flex: 2 1 240px; }
+    .nr-flex-0 { flex: 0 1 120px; }
+    #nr-msg { display: none; font-size: 14px; color: #c0392b; }
+    #nr-done { display: none; }
+    #nr-form { display: none; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+</head>
+
+<body>
+  <div id="site-nav"></div>
+  <script src="nav.js"></script>
+
+  <main>
+    <div class="wrap nr-wrap">
+      <h1 class="h2 nr-title">Complete Registration</h1>
+
+      <p id="nr-status" class="body" style="text-align:center;color:var(--ink-2);margin-bottom:20px">Verifying your invite…</p>
+
+      <form class="nr-form" id="nr-form" autocomplete="on" novalidate>
+        <fieldset class="nr-fieldset">
+          <legend>Name <span class="req">*</span></legend>
+          <div class="nr-row">
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="firstName" placeholder="First Name" required />
+              <span class="nr-sub">First Name</span>
+            </div>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="lastName" placeholder="Last Name" required />
+              <span class="nr-sub">Last Name</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="nr-row">
+          <div class="nr-field">
+            <label for="nr-agency">Agency Name <span class="req">*</span></label>
+            <input class="nr-input" id="nr-agency" type="text" name="agencyName" required />
+          </div>
+          <div class="nr-field">
+            <label for="nr-title">Title / Position</label>
+            <input class="nr-input" id="nr-title" type="text" name="title" />
+          </div>
+        </div>
+
+        <div class="nr-field">
+          <label for="nr-email">Email <span class="req">*</span></label>
+          <input class="nr-input" id="nr-email" type="email" name="email" required disabled />
+        </div>
+
+        <div class="nr-row">
+          <div class="nr-field">
+            <label for="nr-pass">Password <span class="req">*</span></label>
+            <div class="nr-pass-wrap">
+              <input class="nr-input" id="nr-pass" type="password" name="password" minlength="8" required />
+              <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass" aria-label="Show password" aria-pressed="false"></button>
+            </div>
+          </div>
+          <div class="nr-field">
+            <label for="nr-pass2">Confirm password <span class="req">*</span></label>
+            <div class="nr-pass-wrap">
+              <input class="nr-input" id="nr-pass2" type="password" name="password2" minlength="8" required />
+              <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass2" aria-label="Show password" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nr-row">
+          <div class="nr-field nr-flex-2">
+            <label for="nr-work">Work Phone</label>
+            <input class="nr-input" id="nr-work" type="tel" name="workPhone" />
+          </div>
+          <div class="nr-field nr-flex-0">
+            <label for="nr-ext">Ext.</label>
+            <input class="nr-input" id="nr-ext" type="text" name="ext" inputmode="numeric" />
+          </div>
+          <div class="nr-field nr-flex-2">
+            <label for="nr-mobile">Mobile</label>
+            <input class="nr-input" id="nr-mobile" type="tel" name="mobile" />
+          </div>
+        </div>
+
+        <fieldset class="nr-fieldset" id="nr-address">
+          <legend>Address <span class="req">*</span></legend>
+          <div class="nr-field">
+            <input class="nr-input" type="text" name="addr1" placeholder="Street Address" required />
+            <span class="nr-sub">Street Address</span>
+          </div>
+          <div class="nr-field">
+            <input class="nr-input" type="text" name="addr2" placeholder="Street Address Line 2" />
+            <span class="nr-sub">Street Address Line 2</span>
+          </div>
+          <div class="nr-row">
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="city" placeholder="City" required />
+              <span class="nr-sub">City</span>
+            </div>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="state" placeholder="State / Province" required />
+              <span class="nr-sub">State / Province</span>
+            </div>
+            <div class="nr-field">
+              <input class="nr-input" type="text" name="postal" placeholder="Postal / Zip Code" required />
+              <span class="nr-sub">Postal / Zip Code</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="nr-field">
+          <label for="nr-share">Please share a little bit about yourself &amp; your position.</label>
+          <textarea class="nr-textarea" id="nr-share" name="pleaseShare"></textarea>
+        </div>
+
+        <div id="nr-msg"></div>
+
+        <div>
+          <button type="submit" class="btn btn--primary" id="nr-submit">Submit</button>
+        </div>
+      </form>
+
+      <div id="nr-done">
+        <p class="sec-hd__sub">Thanks — check your email to confirm your address. Once confirmed, you can sign in from the site header.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var statusEl = document.getElementById('nr-status');
+      var form = document.getElementById('nr-form');
+      var msgEl = document.getElementById('nr-msg');
+      var submitBtn = document.getElementById('nr-submit');
+      var inviteToken = new URLSearchParams(window.location.search).get('token');
+
+      function showInvalid(text) {
+        statusEl.textContent = text;
+      }
+
+      // Show/hide password toggles.
+      var eye = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+      var eyeOff = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.3 13.3 0 0 1-1.67 2.68"/><path d="M6.06 6.06A13.4 13.4 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.94-1.06"/><path d="m1 1 22 22"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-pass-toggle]'), function (btn) {
+        var input = document.getElementById(btn.getAttribute('data-pass-toggle'));
+        btn.innerHTML = eye;
+        btn.addEventListener('click', function () {
+          var show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          btn.innerHTML = show ? eyeOff : eye;
+          btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+          btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+          input.focus();
+        });
+      });
+
+      function showMsg(text) {
+        msgEl.textContent = text;
+        msgEl.style.display = text ? 'block' : 'none';
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!form.reportValidity()) return;
+        showMsg('');
+
+        var f = function (n) { var el = form.elements[n]; return el ? el.value.trim() : ''; };
+
+        if (f('password') !== f('password2')) {
+          showMsg('Passwords do not match.');
+          return;
+        }
+        if (!window.TBWCAuth) {
+          showMsg('Sign-up is unavailable right now — try again shortly.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        var submitLabel = submitBtn.textContent;
+        submitBtn.textContent = 'Submitting…';
+        window.TBWCAuth.signUp({
+          email: f('email'),
+          password: f('password'),
+          firstName: f('firstName'),
+          lastName: f('lastName'),
+          agencyName: f('agencyName'),
+          title: f('title'),
+          workPhone: f('workPhone'),
+          ext: f('ext'),
+          mobile: f('mobile'),
+          addr1: f('addr1'),
+          addr2: f('addr2'),
+          city: f('city'),
+          state: f('state'),
+          postal: f('postal'),
+          about: f('pleaseShare'),
+          inviteToken: inviteToken
+        }).then(function (res) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitLabel;
+          if (res.error) {
+            showMsg(res.error.message);
+            return;
+          }
+          form.style.display = 'none';
+          document.getElementById('nr-done').style.display = 'block';
+        }, function (err) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitLabel;
+          showMsg((err && err.message) || 'Something went wrong — please try again.');
+        });
+      });
+
+      if (!inviteToken) {
+        showInvalid('This page needs an invitation link. Request access from the Representatives page.');
+        return;
+      }
+      if (!window.TBWCAuth) {
+        showInvalid('Registration is unavailable right now — try again shortly.');
+        return;
+      }
+
+      window.TBWCAuth.sb.functions.invoke('get-lead', { body: { token: inviteToken } }).then(function (res) {
+        if (res.error || !res.data) {
+          showInvalid('This invite link is invalid or has expired.');
+          return;
+        }
+        var lead = res.data;
+        form.elements.firstName.value = lead.firstName || '';
+        form.elements.lastName.value = lead.lastName || '';
+        form.elements.email.value = lead.email || '';
+        form.elements.mobile.value = lead.phone || '';
+        form.elements.pleaseShare.value = lead.about || '';
+        statusEl.style.display = 'none';
+        form.style.display = 'flex';
+      }, function () {
+        showInvalid('This invite link is invalid or has expired.');
+      });
+    })();
+  </script>
+</body>
+
+</html>

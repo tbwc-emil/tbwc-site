@@ -4,12 +4,13 @@
   "private": true,
   "description": "Local admin scripts for the TBWC Supabase database",
   "scripts": {
-    "dev": "npx serve .",
+    "dev": "node scripts/dev.js",
     "db:test": "node scripts/db-test.js",
     "db:schema": "node scripts/apply-schema.js",
     "rep:approve": "node scripts/approve-rep.js",
     "rep:admin": "node scripts/make-admin.js",
-    "smtp:test": "node scripts/smtp-test.js"
+    "smtp:test": "node scripts/smtp-test.js",
+    "test:registration": "node scripts/test-rep-registration.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

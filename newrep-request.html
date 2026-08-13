@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>New Rep Request — TBWC Technology</title>
+  <title>Rep Registration — TBWC Technology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -15,7 +15,6 @@
     .nr-form { display: flex; flex-direction: column; gap: 22px; max-width: 640px; }
     .nr-row { display: flex; gap: 16px; flex-wrap: wrap; }
     .nr-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-    /* Horizontal distribution only applies inside a row; standalone fields keep natural height. */
     .nr-row > .nr-field { flex: 1 1 200px; }
     .nr-field > label { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
       text-transform: uppercase; color: var(--ink-2); }
@@ -26,25 +25,13 @@
       padding: 11px 13px; width: 100%; box-sizing: border-box; }
     .nr-input:focus, .nr-textarea:focus { outline: none; border-color: var(--accent, #2A6FDB); }
     .nr-textarea { resize: vertical; min-height: 120px; }
-    .nr-sub { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); margin-top: 2px; }
     .nr-fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
     .nr-fieldset > legend { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
       text-transform: uppercase; color: var(--ink-2); padding: 0; margin-bottom: 6px; }
-    .nr-pass-wrap { position: relative; }
-    .nr-pass-wrap .nr-input { padding-right: 44px; }
-    .nr-pass-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      display: flex; align-items: center; justify-content: center; background: none; border: 0;
-      padding: 7px; margin: 0; cursor: pointer; color: var(--ink-3); border-radius: 7px; }
-    .nr-pass-toggle:hover { color: var(--ink-2); }
-    .nr-pass-toggle:focus-visible { outline: 2px solid var(--accent, #2A6FDB); outline-offset: 1px; }
-    /* Tighten the stacked street-address lines. */
-    #nr-address { gap: 8px; }
-    #nr-address .nr-field { gap: 2px; }
-    #nr-address .nr-sub { margin-top: 0; }
     .nr-wrap { max-width: 860px; }
-    .nr-title { margin-bottom: 14px; text-align: center; }
-    .nr-flex-2 { flex: 2 1 240px; }
-    .nr-flex-0 { flex: 0 1 120px; }
+    .nr-title { margin-bottom: 6px; text-align: center; }
+    .nr-intro { display: block; text-align: center; margin-bottom: 32px; color: var(--ink-2); font-size: 15px; }
+    .nr-field .nr-sub { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
     #nr-msg { display: none; font-size: 14px; color: #c0392b; }
     #nr-done { display: none; }
   </style>
@@ -59,7 +46,8 @@
 
   <main>
     <div class="wrap nr-wrap">
-      <h1 class="h2 nr-title">Rep Request</h1>
+      <h1 class="h2 nr-title">Rep Registration</h1>
+      <span class="nr-intro">Tell us a bit about yourself — an account manager will follow up.</span>
       <form class="nr-form" id="nr-form" autocomplete="on" novalidate>
         <fieldset class="nr-fieldset">
           <legend>Name <span class="req">*</span></legend>
@@ -77,77 +65,14 @@
 
         <div class="nr-row">
           <div class="nr-field">
-            <label for="nr-agency">Agency Name <span class="req">*</span></label>
-            <input class="nr-input" id="nr-agency" type="text" name="agencyName" required />
+            <label for="nr-email">Email <span class="req">*</span></label>
+            <input class="nr-input" id="nr-email" type="email" name="email" placeholder="example@example.com" required />
           </div>
           <div class="nr-field">
-            <label for="nr-title">Title / Position</label>
-            <input class="nr-input" id="nr-title" type="text" name="title" />
+            <label for="nr-phone">Phone</label>
+            <input class="nr-input" id="nr-phone" type="tel" name="phone" />
           </div>
         </div>
-
-        <div class="nr-field">
-          <label for="nr-email">Email <span class="req">*</span></label>
-          <input class="nr-input" id="nr-email" type="email" name="email" placeholder="example@example.com" required />
-        </div>
-
-        <div class="nr-row">
-          <div class="nr-field">
-            <label for="nr-pass">Password <span class="req">*</span></label>
-            <div class="nr-pass-wrap">
-              <input class="nr-input" id="nr-pass" type="password" name="password" minlength="8" required />
-              <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass" aria-label="Show password" aria-pressed="false"></button>
-            </div>
-          </div>
-          <div class="nr-field">
-            <label for="nr-pass2">Confirm password <span class="req">*</span></label>
-            <div class="nr-pass-wrap">
-              <input class="nr-input" id="nr-pass2" type="password" name="password2" minlength="8" required />
-              <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass2" aria-label="Show password" aria-pressed="false"></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="nr-row">
-          <div class="nr-field nr-flex-2">
-            <label for="nr-work">Work Phone</label>
-            <input class="nr-input" id="nr-work" type="tel" name="workPhone" />
-          </div>
-          <div class="nr-field nr-flex-0">
-            <label for="nr-ext">Ext.</label>
-            <input class="nr-input" id="nr-ext" type="text" name="ext" inputmode="numeric" />
-          </div>
-          <div class="nr-field nr-flex-2">
-            <label for="nr-mobile">Mobile</label>
-            <input class="nr-input" id="nr-mobile" type="tel" name="mobile" />
-          </div>
-        </div>
-
-        <fieldset class="nr-fieldset" id="nr-address">
-          <legend>Address <span class="req">*</span></legend>
-          <div class="nr-field">
-            <input class="nr-input" type="text" name="addr1" placeholder="Street Address" required />
-            <span class="nr-sub">Street Address</span>
-          </div>
-          <div class="nr-field">
-            <input class="nr-input" type="text" name="addr2" placeholder="Street Address Line 2" />
-            <span class="nr-sub">Street Address Line 2</span>
-          </div>
-          <div class="nr-row">
-            <div class="nr-field">
-              <input class="nr-input" type="text" name="city" placeholder="City" required />
-              <span class="nr-sub">City</span>
-            </div>
-            <div class="nr-field">
-              <input class="nr-input" type="text" name="state" placeholder="State / Province" required />
-              <span class="nr-sub">State / Province</span>
-            </div>
-            <div class="nr-field">
-              <input class="nr-input" type="text" name="postal" placeholder="Postal / Zip Code" required />
-              <span class="nr-sub">Postal / Zip Code</span>
-            </div>
-          </div>
-        </fieldset>
 
         <div class="nr-field">
           <label for="nr-share">Please share a little bit about yourself &amp; your position.</label>
@@ -164,7 +89,7 @@
       </form>
 
       <div id="nr-done">
-        <p class="sec-hd__sub">Thanks — your request is in. An account manager will review it and approve portal access, usually within one business day. You'll be able to sign in from the site header once approved.</p>
+        <p class="sec-hd__sub">Thanks — we've received your request. An account manager will be in touch, usually within one business day.</p>
       </div>
     </div>
   </main>
@@ -174,22 +99,6 @@
       var form = document.getElementById('nr-form');
       var msgEl = document.getElementById('nr-msg');
       var submitBtn = document.getElementById('nr-submit');
-
-      // Show/hide password toggles.
-      var eye = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-      var eyeOff = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.3 13.3 0 0 1-1.67 2.68"/><path d="M6.06 6.06A13.4 13.4 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.94-1.06"/><path d="m1 1 22 22"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
-      Array.prototype.forEach.call(document.querySelectorAll('[data-pass-toggle]'), function (btn) {
-        var input = document.getElementById(btn.getAttribute('data-pass-toggle'));
-        btn.innerHTML = eye;
-        btn.addEventListener('click', function () {
-          var show = input.type === 'password';
-          input.type = show ? 'text' : 'password';
-          btn.innerHTML = show ? eyeOff : eye;
-          btn.setAttribute('aria-pressed', show ? 'true' : 'false');
-          btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-          input.focus();
-        });
-      });
 
       function showMsg(text) {
         msgEl.textContent = text;
@@ -203,55 +112,45 @@
 
         var f = function (n) { var el = form.elements[n]; return el ? el.value.trim() : ''; };
 
-        if (f('password') !== f('password2')) {
-          showMsg('Passwords do not match.');
-          return;
-        }
         if (!window.TBWCAuth) {
-          showMsg('Sign-up is unavailable right now — try again shortly.');
+          showMsg('Registration is unavailable right now — try again shortly.');
           return;
         }
 
         var turnstileToken = f('cf-turnstile-response');
-        if (!turnstileToken) {
-          showMsg('Please complete the verification challenge.');
-          return;
-        }
 
         submitBtn.disabled = true;
         var submitLabel = submitBtn.textContent;
         submitBtn.textContent = 'Submitting…';
-        window.TBWCAuth.signUp({
-          email: f('email'),
-          password: f('password'),
-          firstName: f('firstName'),
-          lastName: f('lastName'),
-          agencyName: f('agencyName'),
-          title: f('title'),
-          workPhone: f('workPhone'),
-          ext: f('ext'),
-          mobile: f('mobile'),
-          addr1: f('addr1'),
-          addr2: f('addr2'),
-          city: f('city'),
-          state: f('state'),
-          postal: f('postal'),
-          about: f('pleaseShare'),
-          turnstileToken: turnstileToken
+
+        window.TBWCAuth.verifyTurnstile(turnstileToken).then(function (res) {
+          if (res.error) throw res.error;
+          return window.TBWCAuth.sb.from('rep_leads').insert({
+            first_name: f('firstName'),
+            last_name: f('lastName'),
+            email: f('email'),
+            phone: f('phone'),
+            about: f('pleaseShare')
+          });
         }).then(function (res) {
+          if (res.error) throw res.error;
+          // Best-effort notify — the lead row is already saved, so a failed
+          // email here shouldn't block the user from seeing success.
+          window.TBWCAuth.sb.functions.invoke('send-mail', {
+            body: { type: 'lead-notify', firstName: f('firstName'), lastName: f('lastName'), email: f('email'), phone: f('phone'), about: f('pleaseShare') }
+          }).catch(function () {});
+
           submitBtn.disabled = false;
           submitBtn.textContent = submitLabel;
-          if (res.error) {
-            showMsg(res.error.message);
-            if (window.turnstile) window.turnstile.reset();
-            return;
-          }
           form.style.display = 'none';
           document.getElementById('nr-done').style.display = 'block';
-        }, function (err) {
+        }).catch(function (err) {
           submitBtn.disabled = false;
           submitBtn.textContent = submitLabel;
-          showMsg((err && err.message) || 'Something went wrong — please try again.');
+          var duplicate = err && err.code === '23505';
+          showMsg(duplicate
+            ? "You've already submitted a request with this email — an account manager will be in touch."
+            : (err && err.message) || 'Something went wrong — please try again.');
           if (window.turnstile) window.turnstile.reset();
         });
       });

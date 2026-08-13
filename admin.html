@@ -45,6 +45,13 @@
        while keeping its own gutter padding so content doesn't touch the edge. */
     .adm__full { width: auto; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%);
       padding-left: 20px; padding-right: 20px; box-sizing: border-box; }
+    .adm__confirm-overlay { position: fixed; inset: 0; background: rgba(20,20,20,0.45);
+      display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+    .adm__confirm { max-width: 380px; width: 100%; background: var(--bg); border: 1px solid var(--rule-2);
+      border-radius: 12px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); }
+    .adm__confirm-title { font-size: 16px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+    .adm__confirm-body { font-size: 14px; line-height: 1.5; color: var(--ink-2); margin: 0 0 22px; }
+    .adm__confirm-act { display: flex; justify-content: flex-end; gap: 10px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
@@ -69,6 +76,37 @@
         });
       }
 
+      // Styled stand-in for window.confirm() — native confirm() can't be
+      // themed. Resolves true/false, same call shape as confirm() otherwise.
+      function confirmDialog(title, body) {
+        return new Promise(function (resolve) {
+          var overlay = document.createElement('div');
+          overlay.className = 'adm__confirm-overlay';
+          overlay.innerHTML =
+            '<div class="adm__confirm" role="alertdialog" aria-modal="true">' +
+              '<p class="adm__confirm-title">' + esc(title) + '</p>' +
+              '<p class="adm__confirm-body">' + esc(body) + '</p>' +
+              '<div class="adm__confirm-act">' +
+                '<button class="btn btn--ghost btn--sm" data-confirm-cancel>Cancel</button>' +
+                '<button class="btn btn--primary btn--sm" data-confirm-ok>Delete</button>' +
+              '</div>' +
+            '</div>';
+          document.body.appendChild(overlay);
+
+          function settle(result) {
+            document.body.removeChild(overlay);
+            document.removeEventListener('keydown', onKey);
+            resolve(result);
+          }
+          function onKey(e) { if (e.key === 'Escape') settle(false); }
+          document.addEventListener('keydown', onKey);
+          overlay.addEventListener('click', function (e) { if (e.target === overlay) settle(false); });
+          overlay.querySelector('[data-confirm-cancel]').addEventListener('click', function () { settle(false); });
+          overlay.querySelector('[data-confirm-ok]').addEventListener('click', function () { settle(true); });
+          overlay.querySelector('[data-confirm-ok]').focus();
+        });
+      }
+
       function renderGate(message) {
         root.innerHTML =
           '<div class="adm" style="text-align:center;padding-top:120px">' +
@@ -84,7 +122,7 @@
 
       // Collapse state per card — persists across re-renders (approve/revoke etc.
       // call render() again, but we want the user's expand/collapse choice to stick).
-      var cardOpen = { orders: true, reps: false, docs: false };
+      var cardOpen = { orders: true, leads: true, reps: false, docs: false };
 
       function cardHead(key, title, sub, rightHtml, extraClass) {
         return '<div class="adm__head' + (extraClass ? ' ' + extraClass : '') + '">' +
@@ -110,7 +148,27 @@
         el.querySelector('.adm__caret').classList.toggle('adm__caret--open', cardOpen[key]);
       }
 
-      function render(reps, adminEmail, adminName) {
+      function truncate(s, n) {
+        s = String(s || '');
+        return s.length > n ? s.slice(0, n).trim() + '…' : s;
+      }
+
+      function render(reps, leads, adminEmail, adminName) {
+        var leadRows = leads.map(function (l) {
+          var name = [l.first_name, l.last_name].filter(Boolean).join(' ') || '—';
+          var invited = !!l.invited_at;
+          var action = invited
+            ? '<span class="badge badge--ok">invited</span>'
+            : '<button class="btn btn--primary btn--sm" data-lead-approve="' + l.id + '">Approve</button>';
+          return '<tr data-lead-row="' + l.id + '">' +
+            '<td><div class="adm__name">' + esc(name) + '</div><div class="adm__email">' + esc(l.email) + '</div></td>' +
+            '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + esc(l.phone || '—') + '</td>' +
+            '<td title="' + esc(l.about || '') + '">' + esc(truncate(l.about, 60) || '—') + '</td>' +
+            '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + fmtDate(l.created_at) + '</td>' +
+            '<td><div class="adm__act">' + action + '<button class="btn btn--ghost btn--sm" data-lead-delete="' + l.id + '">Delete</button></div></td>' +
+          '</tr>';
+        }).join('');
+
         var rows = reps.map(function (r) {
           var name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
           var statusBadge = r.approved
@@ -147,6 +205,19 @@
               '<div class="adm__msg adm__full" data-ordersmsg style="display:none"></div>' +
               '<div class="adm__wrap adm__full" style="overflow-x:auto" data-orders-wrap>' +
                 '<div class="adm__empty">Loading…</div>' +
+              '</div>' +
+            '</div>' +
+
+            // ---- Rep Inquiries (the "Register" front door — no account yet) ----
+            cardHead('leads', 'Rep Inquiries', '', '', 'adm__head--sp') +
+            '<div ' + cardBodyAttrs('leads') + '>' +
+              '<div class="adm__msg" data-leadmsg style="display:none"></div>' +
+              '<div class="adm__wrap">' +
+                (leads.length
+                  ? '<table class="adm__table"><thead><tr>' +
+                      '<th>Contact</th><th>Phone</th><th>About</th><th>Requested</th><th></th>' +
+                    '</tr></thead><tbody>' + leadRows + '</tbody></table>'
+                  : '<div class="adm__empty">No inquiries yet.</div>') +
               '</div>' +
             '</div>' +
 
@@ -189,6 +260,7 @@
           window.TBWCAuth.signOut().then(function () { window.location.href = 'index.html'; });
         });
         root.addEventListener('click', onAction);
+        root.addEventListener('click', onLeadAction);
         root.querySelector('[data-docupload]').addEventListener('click', onUpload);
         root.addEventListener('click', onDocDelete);
         root.addEventListener('click', onDocRename);
@@ -361,12 +433,14 @@
         if (!btn) return;
         e.preventDefault();
         var path = btn.getAttribute('data-docdel');
-        if (!window.confirm('Delete "' + path + '"? Reps will no longer see it.')) return;
-        btn.disabled = true;
-        sb.storage.from(DOCS_BUCKET).remove([path]).then(function (res) {
-          if (res.error) { btn.disabled = false; showDocMsg(res.error.message, true); return; }
-          showDocMsg('Deleted ' + path, false);
-          loadDocs();
+        confirmDialog('Delete "' + path + '"?', 'Reps will no longer see it.').then(function (ok) {
+          if (!ok) return;
+          btn.disabled = true;
+          sb.storage.from(DOCS_BUCKET).remove([path]).then(function (res) {
+            if (res.error) { btn.disabled = false; showDocMsg(res.error.message, true); return; }
+            showDocMsg('Deleted ' + path, false);
+            loadDocs();
+          });
         });
       }
 
@@ -423,17 +497,81 @@
           });
       }
 
+      var leadMsgTimer;
+      function showLeadMsg(text, isError) {
+        var el = root.querySelector('[data-leadmsg]');
+        if (!el) return;
+        el.textContent = text;
+        el.style.display = text ? 'block' : 'none';
+        el.style.color = isError ? '#c0392b' : '#1e7e34';
+        clearTimeout(leadMsgTimer);
+        if (text) leadMsgTimer = setTimeout(function () { el.style.display = 'none'; }, 4000);
+      }
+
+      function onLeadAction(e) {
+        var delBtn = e.target.closest('[data-lead-delete]');
+        var appBtn = e.target.closest('[data-lead-approve]');
+        if (delBtn) {
+          var delId = delBtn.getAttribute('data-lead-delete');
+          confirmDialog('Delete this inquiry?', 'This cannot be undone.').then(function (ok) {
+            if (!ok) return;
+            delBtn.disabled = true;
+            sb.from('rep_leads').delete().eq('id', delId).then(function (res) {
+              if (res.error) { delBtn.disabled = false; showLeadMsg(res.error.message, true); return; }
+              showLeadMsg('Deleted.', false);
+              load();
+            });
+          });
+          return;
+        }
+        if (appBtn) {
+          var appId = appBtn.getAttribute('data-lead-approve');
+          appBtn.disabled = true;
+          var token = crypto.randomUUID();
+          sb.from('rep_leads').update({ invite_token: token, invited_at: new Date().toISOString() })
+            .eq('id', appId).select('first_name,email').single()
+            .then(function (res) {
+              if (res.error) { appBtn.disabled = false; showLeadMsg(res.error.message, true); return; }
+              // Local dev (npx serve) 301-redirects "*.html?query" to the extension-free
+              // path and drops the query string in the process — losing the token before
+              // the page ever sees it. Requesting the extension-free path directly has no
+              // such redirect, so skip the ".html" locally. Production (GitHub Pages) has
+              // no such redirect and serves files at their literal path, so it needs it.
+              var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+              var link = new URL((isLocal ? 'rep-signup' : 'rep-signup.html') + '?token=' + token, window.location.href).href;
+              sb.functions.invoke('send-mail', { body: { type: 'invite', email: res.data.email, firstName: res.data.first_name, link: link } })
+                .then(function (mailRes) {
+                  if (mailRes.error) {
+                    showLeadMsg('Approved, but the invite email failed to send — try again or check the address.', true);
+                  } else {
+                    showLeadMsg('Invited ' + res.data.email, false);
+                  }
+                  load();
+                }, function () {
+                  showLeadMsg('Approved, but the invite email failed to send — try again or check the address.', true);
+                  load();
+                });
+            });
+        }
+      }
+
       var currentAdminEmail = '';
       var currentAdminName = '';
       function load() {
-        sb.from('reps')
-          .select('id,email,first_name,last_name,agency_name,approved,is_admin,created_at')
-          .order('approved', { ascending: true })   // pending first
-          .order('created_at', { ascending: false })
-          .then(function (res) {
-            if (res.error) { renderGate('Could not load reps: ' + res.error.message); return; }
-            render(res.data || [], currentAdminEmail, currentAdminName);
-          });
+        Promise.all([
+          sb.from('reps')
+            .select('id,email,first_name,last_name,agency_name,approved,is_admin,created_at')
+            .order('approved', { ascending: true })   // pending first
+            .order('created_at', { ascending: false }),
+          sb.from('rep_leads')
+            .select('id,first_name,last_name,email,phone,about,invited_at,created_at')
+            .order('created_at', { ascending: false })
+        ]).then(function (results) {
+          var repsRes = results[0], leadsRes = results[1];
+          if (repsRes.error) { renderGate('Could not load reps: ' + repsRes.error.message); return; }
+          if (leadsRes.error) { renderGate('Could not load inquiries: ' + leadsRes.error.message); return; }
+          render(repsRes.data || [], leadsRes.data || [], currentAdminEmail, currentAdminName);
+        });
       }
 
       if (!sb) { renderGate('Auth unavailable — try again in a moment.'); return; }

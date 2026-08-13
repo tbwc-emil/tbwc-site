@@ -29,14 +29,14 @@
           '<div class="foot__col">' +
             '<h4>Support</h4>' +
             '<ul>' +
-              '<li><a href="mailto:info@TBWCinc.com?subject=Tech%20Support%20-">Technical support</a></li>' +
+              '<li><a href="mailto:info@TBWCinc.com?subject=Tech%20Support%20-">Technical Support</a></li>' +
             '</ul>' +
           '</div>' +
           '<div class="foot__col">' +
             '<h4>Reps</h4>' +
             '<ul>' +
-              '<li><a href="' + base + '#reps">Rep registration</a></li>' +
-              '<li><a href="reps.html">Territory map</a></li>' +
+              '<li><a href="' + base + '#reps">Rep Registration</a></li>' +
+              '<li><a href="reps.html">Territory Map</a></li>' +
               '<li><a href="portal.html">Rep Portal</a></li>' +
             '</ul>' +
           '</div>' +
@@ -44,7 +44,7 @@
             '<h4>Company</h4>' +
             '<ul>' +
               '<li><a href="' + base + '#about">About</a></li>' +
-              '<li><a href="mailto:info@tbwcinc.com" target="_blank" rel="noopener noreferrer">New customer</a></li>' +
+              '<li><a href="mailto:info@tbwcinc.com" target="_blank" rel="noopener noreferrer">New Customer</a></li>' +
             '</ul>' +
           '</div>' +
           '<div class="foot__col" id="footer-contact">' +

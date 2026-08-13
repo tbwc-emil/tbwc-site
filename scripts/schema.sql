@@ -89,6 +89,14 @@ begin
     new.raw_user_meta_data->>'about'
   )
   on conflict (id) do nothing;
+
+  -- Consume the inquiry this signup was invited from, if any (rep-signup.html
+  -- passes it through as signup metadata). Cleans up the lead row and stops
+  -- the emailed invite link from being reusable once the account exists.
+  if new.raw_user_meta_data->>'invite_token' is not null then
+    delete from public.rep_leads where invite_token = new.raw_user_meta_data->>'invite_token';
+  end if;
+
   return new;
 end;
 $$;
@@ -97,6 +105,100 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_rep();
+
+-- Auto-approve once the rep confirms their email. Review already happened at
+-- the inquiry stage (admin approved the lead before the invite was ever sent),
+-- so email confirmation is the last gate before login rather than a separate
+-- manual approval step.
+create or replace function public.handle_rep_email_confirmed()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.reps set approved = true where id = new.id;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_email_confirmed on auth.users;
+create trigger on_auth_user_email_confirmed
+  after update on auth.users
+  for each row
+  when (new.email_confirmed_at is not null and old.email_confirmed_at is null)
+  execute function public.handle_rep_email_confirmed();
+
+-- ===========================================================================
+-- Rep inquiries ("Register" front door). A short, unauthenticated form
+-- (name/email/phone/about) creates a row here — no auth account yet. An
+-- admin reviews it in admin.html and either deletes it or approves it, which
+-- stamps invite_token/invited_at and emails the applicant a link to
+-- rep-signup.html?token=... (the detailed form that actually creates the
+-- account). No anon SELECT policy on purpose — the invite token is looked up
+-- through the get-lead edge function (service role), not a client query, so
+-- it can't be enumerated.
+-- ===========================================================================
+
+create table if not exists public.rep_leads (
+  id           uuid primary key default gen_random_uuid(),
+  first_name   text not null,
+  last_name    text not null,
+  email        text not null,
+  phone        text,
+  about        text,
+  invite_token text unique,
+  invited_at   timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+-- One pending inquiry per email (case-insensitive) — race-safe, unlike a
+-- pre-insert SELECT check.
+create unique index if not exists rep_leads_email_unique on public.rep_leads (lower(email));
+
+alter table public.rep_leads enable row level security;
+
+-- Blocks a new inquiry from someone who already has a rep account. Anon can't
+-- SELECT public.reps to check this client-side, so it's enforced here instead
+-- — security definer bypasses RLS to read reps, runs before the insert lands.
+create or replace function public.check_lead_email_available()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (select 1 from public.reps where lower(email) = lower(new.email)) then
+    raise exception 'This email is already registered. Sign in from the site header, or contact support if you need help.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists check_lead_email_available on public.rep_leads;
+create trigger check_lead_email_available
+  before insert on public.rep_leads
+  for each row execute function public.check_lead_email_available();
+
+-- Public inquiry form — anyone may create a lead. Not a meaningful security
+-- boundary on its own (same trust model as the Turnstile-then-write pattern
+-- used elsewhere in this app: the client verifies Turnstile before calling
+-- this insert, RLS itself doesn't check it).
+drop policy if exists rep_leads_insert_public on public.rep_leads;
+create policy rep_leads_insert_public on public.rep_leads
+  for insert with check (true);
+
+drop policy if exists rep_leads_select_admin on public.rep_leads;
+create policy rep_leads_select_admin on public.rep_leads
+  for select using (public.is_admin());
+
+drop policy if exists rep_leads_update_admin on public.rep_leads;
+create policy rep_leads_update_admin on public.rep_leads
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists rep_leads_delete_admin on public.rep_leads;
+create policy rep_leads_delete_admin on public.rep_leads
+  for delete using (public.is_admin());
 
 -- ===========================================================================
 -- Rep-facing documents: private Storage bucket + access policies.

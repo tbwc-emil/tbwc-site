@@ -15,7 +15,7 @@
     var res = await sb.auth.signInWithPassword({ email: email, password: password });
     if (res.error) return { error: res.error };
 
-    var repRes = await sb.from('reps').select('approved').eq('id', res.data.user.id).single();
+    var repRes = await sb.from('reps').select('approved,is_admin').eq('id', res.data.user.id).single();
     if (repRes.error || !repRes.data) {
       await sb.auth.signOut();
       return { error: { message: 'No rep profile found for this account. Contact support.' } };
@@ -24,25 +24,33 @@
       await sb.auth.signOut();
       return { error: { message: 'Your registration is still pending approval.' } };
     }
-    return { data: res.data };
+    return { data: res.data, isAdmin: !!repRes.data.is_admin };
   }
 
-  // fields: { email, password, firstName, lastName, agencyName, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, turnstileToken }
-  // The reps profile row is created by the on_auth_user_created DB trigger from this
-  // metadata — no client insert (works with email confirmation on, no post-signup session needed).
-  // turnstileToken is verified server-side (verify-turnstile edge function) before any
-  // account is created — a client-side-only check would be trivial for a bot to skip.
-  async function signUp(fields) {
-    if (!fields.turnstileToken) return { error: { message: 'Please complete the verification challenge.' } };
-    var captchaRes = await sb.functions.invoke('verify-turnstile', { body: { token: fields.turnstileToken } });
-    if (captchaRes.error || !captchaRes.data || !captchaRes.data.success) {
+  // Verifies a Cloudflare Turnstile token server-side (verify-turnstile edge function)
+  // before letting the caller proceed with a public write — a client-side-only check
+  // would be trivial for a bot to skip. Shared by the rep-inquiry form and (formerly)
+  // signUp(); rep-signup.html doesn't call this — the emailed invite token is its gate.
+  async function verifyTurnstile(token) {
+    if (!token) return { error: { message: 'Please complete the verification challenge.' } };
+    var res = await sb.functions.invoke('verify-turnstile', { body: { token: token } });
+    if (res.error || !res.data || !res.data.success) {
       return { error: { message: 'Verification failed — please try again.' } };
     }
+    return { data: true };
+  }
 
+  // fields: { email, password, firstName, lastName, agencyName, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
+  // The reps profile row is created by the on_auth_user_created DB trigger from this
+  // metadata — no client insert (works with email confirmation on, no post-signup session needed).
+  // Only reachable today via an emailed invite link (rep-signup.html), so there's no
+  // separate Turnstile check here — the unguessable invite token is the gate.
+  async function signUp(fields) {
     var signUpRes = await sb.auth.signUp({
       email: fields.email,
       password: fields.password,
       options: {
+        emailRedirectTo: new URL('index.html', window.location.href).href,
         data: {
           first_name: fields.firstName || null,
           last_name: fields.lastName || null,
@@ -56,7 +64,8 @@
           city: fields.city || null,
           state: fields.state || null,
           postal: fields.postal || null,
-          about: fields.about || null
+          about: fields.about || null,
+          invite_token: fields.inviteToken || null
         }
       }
     });
@@ -127,6 +136,7 @@
     sb: sb,
     signIn: signIn,
     signUp: signUp,
+    verifyTurnstile: verifyTurnstile,
     sendPasswordReset: sendPasswordReset,
     updatePassword: updatePassword,
     signOut: signOut,

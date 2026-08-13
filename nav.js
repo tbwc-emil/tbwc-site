@@ -145,7 +145,7 @@
     window.TBWCAuth.signIn(email, passwordInput.value).then(function (res) {
       submitBtn.disabled = false;
       if (res.error) { showMsg(res.error.message, true); return; }
-      window.location.href = 'portal.html';
+      window.location.href = res.isAdmin ? 'admin.html' : 'portal.html';
     });
   });
 
