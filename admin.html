@@ -551,8 +551,13 @@
               // the page ever sees it. Requesting the extension-free path directly has no
               // such redirect, so skip the ".html" locally. Production (GitHub Pages) has
               // no such redirect and serves files at their literal path, so it needs it.
+              //
+              // Base URL is hardcoded to the prod domain (not window.location.href) so an
+              // invite sent while the admin panel happens to be open on localhost — e.g.
+              // testing against the prod DB — never mails a real rep a dead localhost link.
               var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-              var link = new URL((isLocal ? 'rep-signup' : 'rep-signup.html') + '?token=' + token, window.location.href).href;
+              var base = isLocal ? window.location.href : 'https://tbwctechnology.com/';
+              var link = new URL((isLocal ? 'rep-signup' : 'rep-signup.html') + '?token=' + token, base).href;
               sb.functions.invoke('send-mail', { body: { type: 'invite', email: res.data.email, firstName: res.data.first_name, link: link } })
                 .then(function (mailRes) {
                   if (mailRes.error) {
