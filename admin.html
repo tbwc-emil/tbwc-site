@@ -536,7 +536,9 @@
           confirmDialog('Delete this rep?', 'This cannot be undone.').then(function (ok) {
             if (!ok) return;
             delBtn.disabled = true;
-            sb.from('users').delete().eq('id', delId).then(function (res) {
+            // Deletes the auth account too (not just the profile row) — see
+            // delete-rep for why a direct sb.from('users').delete() can't do that.
+            window.TBWCAuth.invokeFn('delete-rep', { id: delId }).then(function (res) {
               if (res.error) { delBtn.disabled = false; showMsg(res.error.message, true); return; }
               showMsg('Deleted.', false);
               load();
@@ -605,7 +607,9 @@
           confirmDialog('Delete this inquiry?', 'This cannot be undone.').then(function (ok) {
             if (!ok) return;
             delBtn.disabled = true;
-            sb.from('rep_leads').delete().eq('id', delId).then(function (res) {
+            // Also sweeps up an orphaned auth account for this email, if one was
+            // left behind by an abandoned earlier signup attempt — see delete-lead.
+            window.TBWCAuth.invokeFn('delete-lead', { id: delId }).then(function (res) {
               if (res.error) { delBtn.disabled = false; showLeadMsg(res.error.message, true); return; }
               showLeadMsg('Deleted.', false);
               load();

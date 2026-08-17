@@ -114,7 +114,7 @@ async function testDuplicateGuards(db) {
 }
 
 async function testEdgeFunctions(db) {
-  console.log('\nEdge functions — verify-turnstile, get-lead, send-mail, rep-signup, submit-rep-lead, verify-lead-email');
+  console.log('\nEdge functions — verify-turnstile, get-lead, send-mail, rep-signup, submit-rep-lead, verify-lead-email, delete-rep, delete-lead');
 
   const badTurnstile = await fn('verify-turnstile', { token: 'not-a-real-token' });
   assert(badTurnstile.status === 403 && badTurnstile.json && badTurnstile.json.success === false, 'verify-turnstile rejects a bogus token');
@@ -165,6 +165,17 @@ async function testEdgeFunctions(db) {
   assert(verifyRes.status === 302, 'verify-lead-email runs without a JWT (redirects, not 401)', String(verifyRes.status));
   const location = verifyRes.headers.get('location') || '';
   assert(location.includes('verify=invalid'), 'verify-lead-email redirects with ?verify=invalid for a bogus token', location);
+
+  // delete-rep/delete-lead do privileged service-role deletes (including the
+  // auth.users side a plain RLS-scoped client delete could never reach), so they
+  // re-check the caller's role themselves instead of relying on RLS — this is the
+  // one thing worth covering here without a real admin session: called with just
+  // the anon key (no logged-in user), both must refuse.
+  const anonDeleteRep = await fn('delete-rep', { id: '00000000-0000-0000-0000-000000000000' });
+  assert(anonDeleteRep.status === 403, 'delete-rep refuses a caller with no session (anon key only)', JSON.stringify(anonDeleteRep.json));
+
+  const anonDeleteLead = await fn('delete-lead', { id: '00000000-0000-0000-0000-000000000000' });
+  assert(anonDeleteLead.status === 403, 'delete-lead refuses a caller with no session (anon key only)', JSON.stringify(anonDeleteLead.json));
 }
 
 async function main() {
