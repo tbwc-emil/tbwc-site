@@ -90,7 +90,7 @@
       </form>
 
       <div id="nr-done">
-        <p class="sec-hd__sub">Thanks — we've received your request. An account manager will be in touch, usually within one business day.</p>
+        <p class="sec-hd__sub">Thanks — check your email to confirm your address. Once confirmed, an account manager will review your request.</p>
       </div>
     </div>
   </main>
@@ -104,6 +104,18 @@
       function showMsg(text) {
         msgEl.textContent = text;
         msgEl.style.display = text ? 'block' : 'none';
+      }
+
+      // Landing back here from the verify-your-email link (verify-lead-email
+      // redirects to ?verify=ok or ?verify=invalid).
+      var verify = new URLSearchParams(window.location.search).get('verify');
+      if (verify === 'ok') {
+        var doneEl = document.getElementById('nr-done');
+        doneEl.querySelector('p').textContent = 'Your email is confirmed — an account manager will review your request and follow up soon.';
+        form.style.display = 'none';
+        doneEl.style.display = 'block';
+      } else if (verify === 'invalid') {
+        showMsg('This verification link is invalid or has expired — submit the form again to get a new one.');
       }
 
       form.addEventListener('submit', function (e) {
@@ -131,16 +143,14 @@
             lastName: f('lastName'),
             email: f('email'),
             phone: f('phone'),
-            about: f('pleaseShare')
+            about: f('pleaseShare'),
+            redirectTo: window.TBWCAuth.linkUrl('newrep-request.html')
           });
         }).then(function (res) {
           if (res.error) throw res.error;
-          // Best-effort notify — the lead row is already saved, so a failed
-          // email here shouldn't block the user from seeing success.
-          window.TBWCAuth.sb.functions.invoke('send-mail', {
-            body: { type: 'lead-notify', firstName: f('firstName'), lastName: f('lastName'), email: f('email'), phone: f('phone'), about: f('pleaseShare') }
-          }).catch(function () {});
-
+          // The admin isn't notified yet at this point — submit-rep-lead only mails
+          // the applicant a verify-your-email link; verify-lead-email notifies the
+          // admin once they've actually clicked it.
           submitBtn.disabled = false;
           submitBtn.textContent = submitLabel;
           form.style.display = 'none';

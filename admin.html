@@ -163,9 +163,14 @@
           var invited = !!l.invited_at;
           var action = invited
             ? '<span class="badge badge--ok">invited</span>'
-            : '<button class="btn btn--primary btn--sm" data-lead-approve="' + l.id + '">Approve</button>';
+            : l.email_verified
+              ? '<button class="btn btn--primary btn--sm" data-lead-approve="' + l.id + '">Approve</button>'
+              : '<button class="btn btn--primary btn--sm" disabled title="Waiting on the applicant to confirm their email">Approve</button>';
+          var verifiedBadge = l.email_verified
+            ? ''
+            : '<span class="badge badge--pending" title="Applicant hasn\'t confirmed their email yet">not verified</span> ';
           return '<tr data-lead-row="' + l.id + '">' +
-            '<td><div class="adm__name">' + esc(name) + '</div><div class="adm__email">' + esc(l.email) + '</div></td>' +
+            '<td><div class="adm__name">' + verifiedBadge + esc(name) + '</div><div class="adm__email">' + esc(l.email) + '</div></td>' +
             '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + esc(l.phone || '—') + '</td>' +
             '<td title="' + esc(l.about || '') + '">' + esc(truncate(l.about, 60) || '—') + '</td>' +
             '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + fmtDate(l.created_at) + '</td>' +
@@ -653,7 +658,7 @@
             .order('approved', { ascending: true })   // pending first
             .order('created_at', { ascending: false }),
           sb.from('rep_leads')
-            .select('id,first_name,last_name,email,phone,about,invited_at,created_at')
+            .select('id,first_name,last_name,email,phone,about,invited_at,email_verified,created_at')
             .order('created_at', { ascending: false })
         ]).then(function (results) {
           var repsRes = results[0], leadsRes = results[1];

@@ -126,13 +126,16 @@ drop function if exists public.handle_rep_email_confirmed();
 
 -- ===========================================================================
 -- Rep inquiries ("Register" front door). A short, unauthenticated form
--- (name/email/phone/about) creates a row here — no auth account yet. An
--- admin reviews it in admin.html and either deletes it or approves it, which
--- stamps invite_token/invited_at and emails the applicant a link to
--- rep-signup.html?token=... (the detailed form that actually creates the
--- account). No anon SELECT policy on purpose — the invite token is looked up
--- through the get-lead edge function (service role), not a client query, so
--- it can't be enumerated.
+-- (name/email/phone/about) creates a row here — no auth account yet, and no
+-- admin notification yet either. submit-rep-lead emails the applicant a
+-- verify-your-email link (verify-lead-email); only once they click it does
+-- email_verified flip true and the admin get notified — admin.html gates the
+-- Approve button on that. Approving stamps invite_token/invited_at and emails
+-- the applicant a link to rep-signup.html?token=... (the detailed form that
+-- actually creates the account — no second email-confirm step there, since
+-- this stage already proved they control the address). No anon SELECT policy
+-- on purpose — tokens are looked up through edge functions (service role),
+-- not a client query, so they can't be enumerated.
 -- ===========================================================================
 
 create table if not exists public.rep_leads (
@@ -146,6 +149,11 @@ create table if not exists public.rep_leads (
   invited_at   timestamptz,
   created_at   timestamptz not null default now()
 );
+
+-- Backfills onto a pre-existing rep_leads table (create table above only applies fresh).
+alter table public.rep_leads add column if not exists email_verified boolean not null default false;
+alter table public.rep_leads add column if not exists verify_token text unique;
+alter table public.rep_leads add column if not exists verified_at timestamptz;
 
 -- One pending inquiry per email (case-insensitive) — race-safe, unlike a
 -- pre-insert SELECT check.

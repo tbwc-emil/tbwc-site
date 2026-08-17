@@ -166,7 +166,7 @@
       </form>
 
       <div id="nr-done">
-        <p class="sec-hd__sub">Thanks — check your email to confirm your address. Once confirmed, you can sign in from the site header.</p>
+        <p class="sec-hd__sub">Thanks — your account is ready. Signing you in…</p>
       </div>
     </div>
   </main>
@@ -243,14 +243,25 @@
           about: leadAbout,
           inviteToken: inviteToken
         }).then(function (res) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = submitLabel;
           if (res.error) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = submitLabel;
             showMsg(res.error.message);
             return;
           }
           form.style.display = 'none';
           document.getElementById('nr-done').style.display = 'block';
+          // Already proved they control this address (verify-lead-email, back at
+          // the inquiry stage) and just set a password — sign them straight in
+          // rather than making them do it again from the header.
+          window.TBWCAuth.signIn(f('email'), f('password')).then(function (signInRes) {
+            if (signInRes.error) {
+              document.getElementById('nr-done').querySelector('p').textContent =
+                'Account created — sign in from the site header.';
+              return;
+            }
+            window.location.href = signInRes.isAdmin ? 'admin.html' : 'portal.html';
+          });
         }, function (err) {
           submitBtn.disabled = false;
           submitBtn.textContent = submitLabel;

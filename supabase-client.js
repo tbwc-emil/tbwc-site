@@ -9,12 +9,17 @@
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Base URL for emailed links — signup confirm (sent by rep-signup, below) and
-  // password reset (still sent by Supabase's own mailer). Hardcoded to the prod
-  // domain (not window.location.href) so testing against the prod DB from
-  // localhost never mails a real user a dead localhost link.
+  // Base URL for emailed links — verify-lead-email's redirect back to
+  // newrep-request.html, and password reset (still sent by Supabase's own
+  // mailer). Hardcoded to the prod domain (not window.location.href) so testing
+  // against the prod DB from localhost never mails a real user a dead
+  // localhost link.
   var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   var baseUrl = isLocal ? window.location.href : 'https://tbwctechnology.com/';
+
+  function linkUrl(page) {
+    return new URL(page, baseUrl).href;
+  }
 
   // Sign in, then confirm the user profile exists and is approved.
   // Rejects (and signs back out) if not — approval gate lives here, not just at signup.
@@ -71,14 +76,14 @@
   }
 
   // fields: { email, password, firstName, lastName, agencyName, url, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
-  // Goes through the rep-signup edge function (service role + admin.generateLink)
-  // instead of sb.auth.signUp() — that call would hand dispatch of the confirmation
-  // email to Supabase's own built-in mailer, a black box the app can't see into or
-  // get a real error back from. Routing through our own function keeps this on the
-  // same SMTP codepath as the invite/lead-notify emails, with real success/failure
-  // signal instead of a blind "check your email".
-  // The users profile row is created by confirm-signup once the emailed link is
-  // clicked (app code, not a DB trigger) — no client insert needed here.
+  // Goes through the rep-signup edge function (service role + admin.createUser)
+  // instead of sb.auth.signUp() — creates an already-confirmed account directly,
+  // no confirmation email at this step. The applicant already proved they control
+  // the address back at the inquiry stage (verify-lead-email); this is just the
+  // detail form behind an unguessable invite link mailed to that same address.
+  // The users profile row is created in the same call — no client insert needed.
+  // Caller should sign in right after a successful result (see signIn above) —
+  // this only creates the account, it doesn't establish a session.
   // Only reachable today via an emailed invite link (rep-signup.html), so there's no
   // separate Turnstile check here — the unguessable invite token is the gate.
   function signUp(fields) {
@@ -99,14 +104,12 @@
       state: fields.state || null,
       postal: fields.postal || null,
       about: fields.about || null,
-      inviteToken: fields.inviteToken || null,
-      redirectTo: new URL('index.html', baseUrl).href
+      inviteToken: fields.inviteToken || null
     });
   }
 
   function sendPasswordReset(email) {
-    var redirectTo = new URL('reset-password.html', baseUrl).href;
-    return sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+    return sb.auth.resetPasswordForEmail(email, { redirectTo: linkUrl('reset-password.html') });
   }
 
   function updatePassword(newPassword) {
@@ -168,6 +171,7 @@
     signUp: signUp,
     verifyTurnstile: verifyTurnstile,
     invokeFn: invokeFn,
+    linkUrl: linkUrl,
     sendPasswordReset: sendPasswordReset,
     updatePassword: updatePassword,
     signOut: signOut,
