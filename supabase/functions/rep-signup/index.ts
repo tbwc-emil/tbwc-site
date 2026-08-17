@@ -31,6 +31,8 @@ function json(body: unknown, status: number) {
   });
 }
 
+const ALREADY_REGISTERED = { error: 'This email is already registered — sign in instead.' };
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -47,38 +49,62 @@ serve(async (req) => {
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  const { data, error } = await sb.auth.admin.createUser({
+  const userMetadata = {
+    first_name: body.firstName || null,
+    last_name: body.lastName || null,
+    agency_name: body.agencyName || null,
+    url: body.url || null,
+    title: body.title || null,
+    work_phone: body.workPhone || null,
+    ext: body.ext || null,
+    mobile: body.mobile || null,
+    addr1: body.addr1 || null,
+    addr2: body.addr2 || null,
+    city: body.city || null,
+    state: body.state || null,
+    postal: body.postal || null,
+    about: body.about || null,
+    invite_token: body.inviteToken || null,
+  };
+
+  const { data: createData, error: createError } = await sb.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: {
-      first_name: body.firstName || null,
-      last_name: body.lastName || null,
-      agency_name: body.agencyName || null,
-      url: body.url || null,
-      title: body.title || null,
-      work_phone: body.workPhone || null,
-      ext: body.ext || null,
-      mobile: body.mobile || null,
-      addr1: body.addr1 || null,
-      addr2: body.addr2 || null,
-      city: body.city || null,
-      state: body.state || null,
-      postal: body.postal || null,
-      about: body.about || null,
-      invite_token: body.inviteToken || null,
-    },
+    user_metadata: userMetadata,
   });
 
-  if (error) {
-    const alreadyRegistered = /already.*(registered|exists)/i.test(error.message || '');
-    return json(
-      { error: alreadyRegistered ? 'This email is already registered — sign in instead.' : (error.message || 'Sign-up failed — try again.') },
-      400
-    );
+  let user = createData?.user;
+
+  if (createError) {
+    if (!/already.*(registered|exists)/i.test(createError.message || '')) {
+      return json({ error: createError.message || 'Sign-up failed — try again.' }, 400);
+    }
+
+    // An auth account for this email already exists — but that alone doesn't mean
+    // this person already has a working account. It can be an abandoned signup
+    // from before this flow existed, or one an admin later deleted the profile
+    // for (public.users has no auth-side counterpart to clean up automatically).
+    // Only treat it as "already registered" if a profile actually backs it;
+    // otherwise reset the account and let this invite finish the job — the
+    // trust boundary is the same either way (an unguessable invite token mailed
+    // to this address), so this isn't granting anything a fresh signup wouldn't.
+    const { data: recoveryData, error: recoveryError } = await sb.auth.admin.generateLink({ type: 'recovery', email });
+    if (recoveryError || !recoveryData?.user) return json(ALREADY_REGISTERED, 400);
+
+    const existingId = recoveryData.user.id;
+    const { data: profile } = await sb.from('users').select('id').eq('id', existingId).maybeSingle();
+    if (profile) return json(ALREADY_REGISTERED, 400);
+
+    const { data: updateData, error: updateError } = await sb.auth.admin.updateUserById(existingId, {
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    });
+    if (updateError || !updateData?.user) return json({ error: 'Sign-up failed — try again.' }, 500);
+    user = updateData.user;
   }
 
-  const user = data?.user;
   if (!user) return json({ error: 'Sign-up failed — try again.' }, 500);
 
   // Mirrors what the old email-confirm trigger did.
