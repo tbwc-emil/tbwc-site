@@ -35,9 +35,9 @@
           '<div class="foot__col">' +
             '<h4>Reps</h4>' +
             '<ul>' +
-              '<li><a href="' + base + '#reps">Rep Registration</a></li>' +
+              '<li><a href="' + base + '#reps">Register</a></li>' +
               '<li><a href="reps.html">Territory Map</a></li>' +
-              '<li><a href="portal.html">Rep Portal</a></li>' +
+              '<li><a href="portal.html">Login</a></li>' +
             '</ul>' +
           '</div>' +
           '<div class="foot__col">' +

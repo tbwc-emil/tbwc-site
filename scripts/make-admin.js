@@ -12,17 +12,17 @@ async function main() {
 
   if (!email) {
     const res = await client.query(
-      'select email from public.reps where is_admin order by email'
+      'select email from public.users where is_admin order by email'
     );
     if (!res.rows.length) console.log('No admins yet.');
     res.rows.forEach((r) => console.log('[ADMIN] ' + r.email));
   } else {
     // Admins must also be approved so they can pass the sign-in gate.
     const res = await client.query(
-      'update public.reps set is_admin = true, approved = true where email = $1 returning email',
+      'update public.users set is_admin = true, approved = true where email = $1 returning email',
       [email]
     );
-    console.log(res.rowCount ? 'Admin granted: ' + res.rows[0].email : 'No rep with email ' + email);
+    console.log(res.rowCount ? 'Admin granted: ' + res.rows[0].email : 'No user with email ' + email);
   }
   await client.end();
 }

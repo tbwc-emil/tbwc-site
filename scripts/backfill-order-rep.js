@@ -10,7 +10,7 @@ async function main() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
-  const rep = await client.query('select id from public.reps where email = $1', [REP_EMAIL]);
+  const rep = await client.query('select id from public.users where email = $1', [REP_EMAIL]);
   if (!rep.rows.length) throw new Error(`No rep found with email ${REP_EMAIL}`);
   const repId = rep.rows[0].id;
 

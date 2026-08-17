@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rep Registration — TBWC Technology</title>
+  <title>Registration — TBWC Technology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -46,7 +46,7 @@
 
   <main>
     <div class="wrap nr-wrap">
-      <h1 class="h2 nr-title">Rep Registration</h1>
+      <h1 class="h2 nr-title">Registration</h1>
       <span class="nr-intro">Tell us a bit about yourself — an account manager will follow up.</span>
       <form class="nr-form" id="nr-form" autocomplete="on" novalidate>
         <fieldset class="nr-fieldset">
@@ -69,13 +69,13 @@
             <input class="nr-input" id="nr-email" type="email" name="email" placeholder="example@example.com" required />
           </div>
           <div class="nr-field">
-            <label for="nr-phone">Phone</label>
-            <input class="nr-input" id="nr-phone" type="tel" name="phone" />
+            <label for="nr-phone">Phone <span class="req">*</span></label>
+            <input class="nr-input" id="nr-phone" type="tel" name="phone" required />
           </div>
         </div>
 
         <div class="nr-field">
-          <label for="nr-share">Please share a little bit about yourself &amp; your position.</label>
+          <label for="nr-share">Please share a little bit about yourself.</label>
           <textarea class="nr-textarea" id="nr-share" name="pleaseShare"></textarea>
         </div>
 

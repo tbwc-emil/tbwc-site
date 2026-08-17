@@ -1,4 +1,4 @@
-// Regression checks for the rep registration flow (inquiry -> admin approval
+// Regression checks for the registration flow (inquiry -> admin approval
 // -> signup -> email-confirm auto-approve). Hits the live Supabase project
 // directly (schema, RLS, edge functions) and cleans up everything it creates.
 //   node scripts/test-rep-registration.js
@@ -94,7 +94,7 @@ async function testDuplicateGuards(db) {
 
   await db.query('delete from public.rep_leads where email = $1', [email]);
 
-  const repRow = await db.query('select email from public.reps limit 1');
+  const repRow = await db.query("select email from public.users where type = 'rep' limit 1");
   if (repRow.rowCount) {
     const repEmail = repRow.rows[0].email;
     const dupRep = await rest('POST', 'rep_leads', { body: { first_name: 'Existing', last_name: 'Rep', email: repEmail } });

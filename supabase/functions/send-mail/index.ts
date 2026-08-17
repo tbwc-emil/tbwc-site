@@ -79,7 +79,7 @@ function leadNotifyEmail(f: { firstName: string; lastName: string; email: string
     `<p style="margin:24px 0 0;font-size:13px;color:#7c7f89;">Review and approve in the admin portal.</p>`;
   return {
     subject: `New rep inquiry — ${f.firstName} ${f.lastName}`,
-    html: wrapEmail('New rep registration inquiry.', 'New rep inquiry', body),
+    html: wrapEmail('New Registration inquiry.', 'New Inquiry', body),
   };
 }
 

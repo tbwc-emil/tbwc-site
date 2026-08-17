@@ -1,7 +1,12 @@
 -- Rep Portal schema. Idempotent — safe to re-run.
 -- Applied with: npm run db:schema
 
-create table if not exists public.reps (
+-- Carries a pre-existing reps table (from before the users rename) over to the
+-- new name. No-op on a fresh install (table doesn't exist yet) or a re-run
+-- (already renamed).
+alter table if exists public.reps rename to users;
+
+create table if not exists public.users (
   id          uuid primary key references auth.users (id) on delete cascade,
   email       text,
   first_name  text,
@@ -23,47 +28,87 @@ create table if not exists public.reps (
 
 -- Admin flag. Grants access to the browser admin page (admin.html) to approve reps.
 -- Only the service role (bootstrap via scripts/make-admin.js) or an existing admin can set it.
-alter table public.reps add column if not exists is_admin boolean not null default false;
+alter table public.users add column if not exists is_admin boolean not null default false;
 
-alter table public.reps enable row level security;
+-- User type: rep (default — the original signup flow), customer, or employee
+-- (internal staff, gated by the can_see_orders/can_approve_rep_leads flags below).
+alter table public.users add column if not exists type text not null default 'rep';
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'users_type_check') then
+    alter table public.users add constraint users_type_check check (type in ('rep', 'customer', 'employee'));
+  end if;
+end $$;
+
+-- Employee-only permission flags. Meaningless (and left false) for rep/customer rows.
+alter table public.users add column if not exists can_see_orders boolean not null default false;
+alter table public.users add column if not exists can_approve_rep_leads boolean not null default false;
+
+alter table public.users enable row level security;
 
 -- Is the CURRENT auth user an admin? security definer => bypasses RLS, so referencing
--- public.reps here does NOT recurse through the reps policies below.
+-- public.users here does NOT recurse through the users policies below.
 create or replace function public.is_admin()
 returns boolean
 language sql
 security definer
 set search_path = public
 stable
-as $$ select exists (select 1 from public.reps where id = auth.uid() and is_admin); $$;
+as $$ select exists (select 1 from public.users where id = auth.uid() and is_admin); $$;
 
--- A rep may read only their own profile (approval gate reads reps.approved).
-drop policy if exists reps_select_own on public.reps;
-create policy reps_select_own on public.reps
+-- Is the CURRENT auth user an employee flagged to see all orders?
+create or replace function public.can_see_orders()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$ select exists (select 1 from public.users where id = auth.uid() and type = 'employee' and can_see_orders); $$;
+
+-- Is the CURRENT auth user an employee flagged to approve rep leads?
+create or replace function public.can_approve_rep_leads()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$ select exists (select 1 from public.users where id = auth.uid() and type = 'employee' and can_approve_rep_leads); $$;
+
+-- A user may read only their own profile (approval gate reads users.approved).
+drop policy if exists reps_select_own on public.users;
+drop policy if exists users_select_own on public.users;
+create policy users_select_own on public.users
   for select using (auth.uid() = id);
 
--- Admins may read every rep row (admin page lists all reps).
-drop policy if exists reps_select_admin on public.reps;
-create policy reps_select_admin on public.reps
+-- Admins may read every user row (admin page lists all reps).
+drop policy if exists reps_select_admin on public.users;
+drop policy if exists users_select_admin on public.users;
+create policy users_select_admin on public.users
   for select using (public.is_admin());
 
--- Admins may update rep rows (flip approved). with check keeps writes admin-only.
-drop policy if exists reps_update_admin on public.reps;
-create policy reps_update_admin on public.reps
+-- Admins may update user rows (flip approved, flags). with check keeps writes admin-only.
+drop policy if exists reps_update_admin on public.users;
+drop policy if exists users_update_admin on public.users;
+create policy users_update_admin on public.users
   for update using (public.is_admin()) with check (public.is_admin());
 
--- Admins may delete rep rows (remove a rep from the portal).
-drop policy if exists reps_delete_admin on public.reps;
-create policy reps_delete_admin on public.reps
+-- Admins may delete user rows (remove a rep/employee/customer from the portal).
+drop policy if exists reps_delete_admin on public.users;
+drop policy if exists users_delete_admin on public.users;
+create policy users_delete_admin on public.users
   for delete using (public.is_admin());
 
 -- No client INSERT policy on purpose:
---  * The reps row is created by the trigger below (runs as owner), not the client.
+--  * The users row is created by the trigger below (runs as owner), not the client.
 --  * approved stays false; a non-admin client has no update policy, so it cannot self-approve.
 -- Drop the old client-insert policy if a previous version created it.
-drop policy if exists reps_insert_own on public.reps;
+drop policy if exists reps_insert_own on public.users;
+drop policy if exists users_insert_own on public.users;
 
--- Auto-create the rep profile when an auth user signs up.
+-- Auto-create the user profile when an auth user signs up. Lands as type='rep'
+-- (the column default) — this trigger only fires from the rep signup flow;
+-- customer/employee rows are created directly by an admin, not through signup.
 -- Profile fields arrive in raw_user_meta_data (set via supabase.auth.signUp options.data).
 -- security definer => bypasses RLS; runs whether or not email confirmation is on.
 create or replace function public.handle_new_rep()
@@ -73,7 +118,7 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.reps (
+  insert into public.users (
     id, email, first_name, last_name, agency_name, title,
     work_phone, ext, mobile, addr1, addr2, city, state, postal, about
   ) values (
@@ -122,7 +167,7 @@ security definer
 set search_path = public
 as $$
 begin
-  update public.reps set approved = true where id = new.id;
+  update public.users set approved = true where id = new.id;
   return new;
 end;
 $$;
@@ -163,9 +208,9 @@ create unique index if not exists rep_leads_email_unique on public.rep_leads (lo
 
 alter table public.rep_leads enable row level security;
 
--- Blocks a new inquiry from someone who already has a rep account. Anon can't
--- SELECT public.reps to check this client-side, so it's enforced here instead
--- — security definer bypasses RLS to read reps, runs before the insert lands.
+-- Blocks a new inquiry from someone who already has a user account. Anon can't
+-- SELECT public.users to check this client-side, so it's enforced here instead
+-- — security definer bypasses RLS to read users, runs before the insert lands.
 create or replace function public.check_lead_email_available()
 returns trigger
 language plpgsql
@@ -173,7 +218,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if exists (select 1 from public.reps where lower(email) = lower(new.email)) then
+  if exists (select 1 from public.users where lower(email) = lower(new.email)) then
     raise exception 'This email is already registered. Sign in from the site header, or contact support if you need help.';
   end if;
   return new;
@@ -193,17 +238,19 @@ drop policy if exists rep_leads_insert_public on public.rep_leads;
 create policy rep_leads_insert_public on public.rep_leads
   for insert with check (true);
 
+-- Admins, plus employees flagged can_approve_rep_leads, may review/approve leads.
 drop policy if exists rep_leads_select_admin on public.rep_leads;
 create policy rep_leads_select_admin on public.rep_leads
-  for select using (public.is_admin());
+  for select using (public.is_admin() or public.can_approve_rep_leads());
 
 drop policy if exists rep_leads_update_admin on public.rep_leads;
 create policy rep_leads_update_admin on public.rep_leads
-  for update using (public.is_admin()) with check (public.is_admin());
+  for update using (public.is_admin() or public.can_approve_rep_leads())
+  with check (public.is_admin() or public.can_approve_rep_leads());
 
 drop policy if exists rep_leads_delete_admin on public.rep_leads;
 create policy rep_leads_delete_admin on public.rep_leads
-  for delete using (public.is_admin());
+  for delete using (public.is_admin() or public.can_approve_rep_leads());
 
 -- ===========================================================================
 -- Rep-facing documents: private Storage bucket + access policies.
@@ -219,7 +266,7 @@ language sql
 security definer
 set search_path = public
 stable
-as $$ select exists (select 1 from public.reps where id = auth.uid() and approved); $$;
+as $$ select exists (select 1 from public.users where id = auth.uid() and type = 'rep' and approved); $$;
 
 -- Private bucket (public = false => no anonymous object access).
 insert into storage.buckets (id, name, public)
@@ -282,7 +329,7 @@ create table if not exists public."order" (
 -- Links an order to the rep it belongs to (rep-portal filtering). Nullable so
 -- existing/unassigned orders don't break; scripts/backfill-order-rep.js
 -- one-time-defaults every pre-existing row to the sole rep at the time (Emil Guirguis).
-alter table public."order" add column if not exists rep_id uuid references public.reps (id);
+alter table public."order" add column if not exists rep_id uuid references public.users (id);
 
 alter table public."order" enable row level security;
 
@@ -295,6 +342,11 @@ create policy order_select_admin on public."order"
 drop policy if exists order_select_own_rep on public."order";
 create policy order_select_own_rep on public."order"
   for select using (rep_id = auth.uid());
+
+-- Employees flagged can_see_orders may read every order (read-only, same as reps).
+drop policy if exists order_select_employee on public."order";
+create policy order_select_employee on public."order"
+  for select using (public.can_see_orders());
 
 drop policy if exists order_insert_admin on public."order";
 create policy order_insert_admin on public."order"

@@ -11,7 +11,7 @@ async function main() {
 
   if (!email) {
     const res = await client.query(
-      'select email, approved, created_at from public.reps order by created_at desc'
+      "select email, approved, created_at from public.users where type = 'rep' order by created_at desc"
     );
     if (!res.rows.length) console.log('No reps yet.');
     res.rows.forEach((r) =>
@@ -19,7 +19,7 @@ async function main() {
     );
   } else {
     const res = await client.query(
-      'update public.reps set approved = true where email = $1 returning email',
+      "update public.users set approved = true where email = $1 and type = 'rep' returning email",
       [email]
     );
     console.log(res.rowCount ? 'Approved: ' + res.rows[0].email : 'No rep with email ' + email);

@@ -9,9 +9,9 @@ async function main() {
   await client.connect();
   await client.query(sql);
   const res = await client.query(
-    "select policyname from pg_policies where tablename = 'reps' order by policyname"
+    "select policyname from pg_policies where tablename = 'users' order by policyname"
   );
-  console.log('reps table ready. policies:', res.rows.map((r) => r.policyname).join(', '));
+  console.log('users table ready. policies:', res.rows.map((r) => r.policyname).join(', '));
   await client.end();
 }
 

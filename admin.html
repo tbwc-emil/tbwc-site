@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin — Rep Approvals — TBWC Technology</title>
+  <title>Admin — Users — TBWC Technology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -27,6 +27,9 @@
     .adm__name { color: var(--ink); font-weight: 500; }
     .adm__email { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); }
     .adm__wrap { border: 1px solid var(--rule-2); border-radius: 10px; overflow-x: auto; background: var(--bg); }
+    .adm__group + .adm__group { border-top: 1px solid var(--rule-2); }
+    .adm__grouplabel { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--ink-3); padding: 10px 12px; }
     .badge { font-family: var(--f-mono); font-size: 11px; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
     .badge--ok { background: #e6f4ea; color: #1e7e34; }
     .badge--pending { background: #fdf0e3; color: #b8681a; }
@@ -169,7 +172,29 @@
           '</tr>';
         }).join('');
 
-        var rows = reps.map(function (r) {
+        var USER_TYPES = ['rep', 'customer', 'employee'];
+
+        var typeSelect = function (r) {
+          return '<select class="mono" style="font-size:12px;padding:4px 6px;border:1px solid var(--rule-2);border-radius:6px;background:var(--bg)" data-type-select="' + r.id + '">' +
+            USER_TYPES.map(function (t) {
+              return '<option value="' + t + '"' + (r.type === t ? ' selected' : '') + '>' + t + '</option>';
+            }).join('') +
+          '</select>';
+        };
+
+        var employeeFlags = function (r) {
+          if (r.type !== 'employee') return '';
+          return '<div style="display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:11px;color:var(--ink-2)">' +
+            '<label style="display:flex;align-items:center;gap:5px;cursor:pointer">' +
+              '<input type="checkbox" data-flag-toggle="' + r.id + '" data-flag="can_see_orders"' + (r.can_see_orders ? ' checked' : '') + ' /> Can see orders' +
+            '</label>' +
+            '<label style="display:flex;align-items:center;gap:5px;cursor:pointer">' +
+              '<input type="checkbox" data-flag-toggle="' + r.id + '" data-flag="can_approve_rep_leads"' + (r.can_approve_rep_leads ? ' checked' : '') + ' /> Can approve rep leads' +
+            '</label>' +
+          '</div>';
+        };
+
+        var repRow = function (r) {
           var name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
           var statusBadge = r.approved
             ? '<span class="badge badge--ok">approved</span>'
@@ -181,10 +206,27 @@
           return '<tr data-row="' + r.id + '">' +
             '<td><div class="adm__name">' + esc(name) + '</div><div class="adm__email">' + esc(r.email) + '</div></td>' +
             '<td>' + esc(r.agency_name || '—') + '</td>' +
+            '<td>' + typeSelect(r) + employeeFlags(r) + '</td>' +
             '<td class="mono" style="font-size:12px;color:var(--ink-3)">' + fmtDate(r.created_at) + '</td>' +
             '<td>' + statusBadge + '</td>' +
             '<td><div class="adm__act">' + action + '<button class="btn btn--ghost btn--sm" data-rep-delete="' + r.id + '">Delete</button></div></td>' +
           '</tr>';
+        };
+
+        var repGroups = [
+          { label: 'Admins', items: reps.filter(function (r) { return r.is_admin; }) },
+          { label: 'Approved', items: reps.filter(function (r) { return r.approved && !r.is_admin; }) },
+          { label: 'Pending', items: reps.filter(function (r) { return !r.approved && !r.is_admin; }) }
+        ];
+
+        var repGroupsHtml = repGroups.map(function (g) {
+          if (!g.items.length) return '';
+          return '<div class="adm__group">' +
+            '<div class="adm__grouplabel">' + esc(g.label) + ' (' + g.items.length + ')</div>' +
+            '<table class="adm__table"><thead><tr>' +
+              '<th>User</th><th>Agency</th><th>Type</th><th>Requested</th><th>Status</th><th></th>' +
+            '</tr></thead><tbody>' + g.items.map(repRow).join('') + '</tbody></table>' +
+          '</div>';
         }).join('');
 
         root.innerHTML =
@@ -221,16 +263,12 @@
               '</div>' +
             '</div>' +
 
-            // ---- Rep Approvals ----
-            cardHead('reps', 'Rep Approvals', '', '', 'adm__head--sp') +
+            // ---- Users ----
+            cardHead('reps', 'Users', '', '', 'adm__head--sp') +
             '<div ' + cardBodyAttrs('reps') + '>' +
               '<div class="adm__msg" data-msg style="display:none"></div>' +
               '<div class="adm__wrap">' +
-                (reps.length
-                  ? '<table class="adm__table"><thead><tr>' +
-                      '<th>Rep</th><th>Agency</th><th>Requested</th><th>Status</th><th></th>' +
-                    '</tr></thead><tbody>' + rows + '</tbody></table>'
-                  : '<div class="adm__empty">No rep requests yet.</div>') +
+                (reps.length ? repGroupsHtml : '<div class="adm__empty">No rep requests yet.</div>') +
               '</div>' +
             '</div>' +
 
@@ -261,6 +299,8 @@
         });
         root.addEventListener('click', onAction);
         root.addEventListener('click', onLeadAction);
+        root.addEventListener('change', onTypeChange);
+        root.addEventListener('change', onFlagToggle);
         root.querySelector('[data-docupload]').addEventListener('click', onUpload);
         root.addEventListener('click', onDocDelete);
         root.addEventListener('click', onDocRename);
@@ -490,7 +530,7 @@
           confirmDialog('Delete this rep?', 'This cannot be undone.').then(function (ok) {
             if (!ok) return;
             delBtn.disabled = true;
-            sb.from('reps').delete().eq('id', delId).then(function (res) {
+            sb.from('users').delete().eq('id', delId).then(function (res) {
               if (res.error) { delBtn.disabled = false; showMsg(res.error.message, true); return; }
               showMsg('Deleted.', false);
               load();
@@ -503,11 +543,40 @@
         var approve = btn.hasAttribute('data-approve');
         var id = btn.getAttribute(approve ? 'data-approve' : 'data-revoke');
         btn.disabled = true;
-        sb.from('reps').update({ approved: approve }).eq('id', id).select('email').single()
+        sb.from('users').update({ approved: approve }).eq('id', id).select('email').single()
           .then(function (res) {
             if (res.error) { btn.disabled = false; showMsg(res.error.message, true); return; }
             showMsg((approve ? 'Approved ' : 'Revoked ') + res.data.email, false);
             load(); // refresh list
+          });
+      }
+
+      function onTypeChange(e) {
+        var sel = e.target.closest('[data-type-select]');
+        if (!sel) return;
+        var id = sel.getAttribute('data-type-select');
+        sel.disabled = true;
+        sb.from('users').update({ type: sel.value }).eq('id', id).select('email').single()
+          .then(function (res) {
+            if (res.error) { sel.disabled = false; showMsg(res.error.message, true); return; }
+            showMsg('Type updated for ' + res.data.email, false);
+            load(); // refresh — employee flag checkboxes show/hide based on new type
+          });
+      }
+
+      function onFlagToggle(e) {
+        var box = e.target.closest('[data-flag-toggle]');
+        if (!box) return;
+        var id = box.getAttribute('data-flag-toggle');
+        var flag = box.getAttribute('data-flag');
+        box.disabled = true;
+        var patch = {};
+        patch[flag] = box.checked;
+        sb.from('users').update(patch).eq('id', id).select('email').single()
+          .then(function (res) {
+            box.disabled = false;
+            if (res.error) { box.checked = !box.checked; showMsg(res.error.message, true); return; }
+            showMsg('Updated ' + res.data.email, false);
           });
       }
 
@@ -578,8 +647,8 @@
       var currentAdminName = '';
       function load() {
         Promise.all([
-          sb.from('reps')
-            .select('id,email,first_name,last_name,agency_name,approved,is_admin,created_at')
+          sb.from('users')
+            .select('id,email,first_name,last_name,agency_name,approved,is_admin,type,can_see_orders,can_approve_rep_leads,created_at')
             .order('approved', { ascending: true })   // pending first
             .order('created_at', { ascending: false }),
           sb.from('rep_leads')
@@ -600,8 +669,8 @@
         if (!session) { window.location.href = 'index.html'; return; }
         currentAdminEmail = session.user.email;
 
-        // Gate on is_admin (own row is readable via reps_select_own).
-        sb.from('reps').select('is_admin,approved,first_name,last_name').eq('id', session.user.id).single().then(function (me) {
+        // Gate on is_admin (own row is readable via users_select_own).
+        sb.from('users').select('is_admin,approved,first_name,last_name').eq('id', session.user.id).single().then(function (me) {
           if (me.error || !me.data || !me.data.is_admin) {
             renderGate('Not authorized — this page is for administrators only.');
             return;

@@ -42,10 +42,10 @@
         '</a>' +
         '<div class="nav__links">' + linkRow('nav__link', false) + '</div>' +
         '<div class="nav__cta-group" style="position:relative">' +
-          '<button class="btn btn--primary btn--sm" data-drop-toggle>Rep Portal</button>' +
+          '<button class="btn btn--primary btn--sm" data-drop-toggle>Login</button>' +
           '<button class="nav__burger" aria-label="Menu" data-burger data-open="0"><span></span><span></span><span></span></button>' +
           '<div class="portal-drop" data-drop hidden>' +
-            '<p class="portal-drop__title">Rep Portal</p>' +
+            '<p class="portal-drop__title">Login</p>' +
             '<form data-portal-form style="display:flex;flex-direction:column;gap:10px">' +
               '<input class="portal-drop__input" data-field="email" type="email" placeholder="Email" required />' +
               '<div class="portal-drop__pass" data-pass-wrap>' +
@@ -57,7 +57,7 @@
             '</form>' +
             '<div class="portal-drop__links">' +
               '<a href="#" data-forgot-toggle>Forgot password?</a>' +
-              '<a href="newrep-request.html" class="btn btn--ghost btn--sm">Rep Registration</a>' +
+              '<a href="newrep-request.html" class="btn btn--ghost btn--sm">Register</a>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -99,7 +99,7 @@
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // Rep Portal dropdown
+  // Login dropdown
   function setDrop(open) {
     drop.hidden = !open;
     if (open) { var el = form.querySelector('input'); if (el) el.focus(); }

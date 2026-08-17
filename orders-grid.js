@@ -275,7 +275,7 @@
       if (editable && selectCols.indexOf('rep_id') === -1) selectCols.push('rep_id');
 
       var repsReady = editable
-        ? sb.from('reps').select('id,first_name,last_name').then(function (res) {
+        ? sb.from('users').select('id,first_name,last_name').eq('type', 'rep').then(function (res) {
             repOptions = (res.data || []).map(function (r) {
               return { id: r.id, label: [r.first_name, r.last_name].filter(Boolean).join(' ') || r.id };
             });

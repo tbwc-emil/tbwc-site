@@ -9,22 +9,28 @@
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Sign in, then confirm the rep profile exists and is approved.
+  // Base URL for links mailed by Supabase auth (email confirm, password reset).
+  // Hardcoded to the prod domain (not window.location.href) so testing against the
+  // prod DB from localhost never mails a real user a dead localhost link.
+  var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  var baseUrl = isLocal ? window.location.href : 'https://tbwctechnology.com/';
+
+  // Sign in, then confirm the user profile exists and is approved.
   // Rejects (and signs back out) if not — approval gate lives here, not just at signup.
   async function signIn(email, password) {
     var res = await sb.auth.signInWithPassword({ email: email, password: password });
     if (res.error) return { error: res.error };
 
-    var repRes = await sb.from('reps').select('approved,is_admin').eq('id', res.data.user.id).single();
-    if (repRes.error || !repRes.data) {
+    var userRes = await sb.from('users').select('approved,is_admin').eq('id', res.data.user.id).single();
+    if (userRes.error || !userRes.data) {
       await sb.auth.signOut();
-      return { error: { message: 'No rep profile found for this account. Contact support.' } };
+      return { error: { message: 'No user profile found for this account. Contact support.' } };
     }
-    if (!repRes.data.approved) {
+    if (!userRes.data.approved) {
       await sb.auth.signOut();
       return { error: { message: 'Your registration is still pending approval.' } };
     }
-    return { data: res.data, isAdmin: !!repRes.data.is_admin };
+    return { data: res.data, isAdmin: !!userRes.data.is_admin };
   }
 
   // Verifies a Cloudflare Turnstile token server-side (verify-turnstile edge function)
@@ -41,7 +47,7 @@
   }
 
   // fields: { email, password, firstName, lastName, agencyName, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
-  // The reps profile row is created by the on_auth_user_created DB trigger from this
+  // The users profile row is created by the on_auth_user_created DB trigger from this
   // metadata — no client insert (works with email confirmation on, no post-signup session needed).
   // Only reachable today via an emailed invite link (rep-signup.html), so there's no
   // separate Turnstile check here — the unguessable invite token is the gate.
@@ -50,7 +56,7 @@
       email: fields.email,
       password: fields.password,
       options: {
-        emailRedirectTo: new URL('index.html', window.location.href).href,
+        emailRedirectTo: new URL('index.html', baseUrl).href,
         data: {
           first_name: fields.firstName || null,
           last_name: fields.lastName || null,
@@ -75,7 +81,7 @@
   }
 
   function sendPasswordReset(email) {
-    var redirectTo = new URL('reset-password.html', window.location.href).href;
+    var redirectTo = new URL('reset-password.html', baseUrl).href;
     return sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
   }
 

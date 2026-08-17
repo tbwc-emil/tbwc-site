@@ -190,7 +190,7 @@
         var session = res.data && res.data.session;
         if (!session) { window.location.href = 'index.html'; return; }
 
-        window.TBWCAuth.sb.from('reps').select('approved,first_name,last_name').eq('id', session.user.id).single().then(function (repRes) {
+        window.TBWCAuth.sb.from('users').select('approved,first_name,last_name').eq('id', session.user.id).single().then(function (repRes) {
           if (repRes.error || !repRes.data || !repRes.data.approved) {
             window.TBWCAuth.signOut().then(function () {
               renderGate('Your registration is pending approval.');
