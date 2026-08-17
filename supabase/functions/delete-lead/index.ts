@@ -43,11 +43,11 @@ serve(async (req) => {
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  // Matches rep_leads_delete_admin's RLS predicate (is_admin() or
-  // can_approve_rep_leads()) — this function bypasses RLS via the service role,
-  // so it has to re-check that itself.
+  // Matches rep_leads_delete_admin's RLS predicate (can_approve_rep_leads() —
+  // is_admin does NOT imply this) — this function bypasses RLS via the service
+  // role, so it has to re-check that itself.
   const caller = await getCaller(req, sb);
-  if (!caller.ok || !(caller.isAdmin || caller.canApproveRepLeads)) return json({ error: 'Not authorized' }, 403);
+  if (!caller.ok || !caller.canApproveRepLeads) return json({ error: 'Not authorized' }, 403);
 
   const { data: lead, error: fetchError } = await sb.from('rep_leads').select('email').eq('id', id).maybeSingle();
   if (fetchError) return json({ error: fetchError.message || 'Delete failed — try again.' }, 500);

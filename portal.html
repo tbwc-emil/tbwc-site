@@ -38,7 +38,7 @@
           '</div>';
       }
 
-      function renderDashboard(email, fullName) {
+      function renderDashboard(email, fullName, showOrders) {
         var actions = ['New order', 'Open an RMA', 'Register a deal', 'Download datasheet'];
         var actionRows = actions.map(function (a) {
           return '<a href="#" style="display:flex;justify-content:space-between;padding:10px 12px;border-radius:6px;border:var(--rule-w) solid var(--rule);font-size:13px;color:var(--ink-2)"><span>' + a + '</span><span>→</span></a>';
@@ -78,10 +78,11 @@
                   '<div class="portal__tile-num">$24,750</div>' +
                   '<div class="portal__tile-meta"></div>' +
                 '</div>' +
+                (showOrders ?
                 '<div class="portal__tile" style="grid-column:span 2">' +
                   '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Orders</h3><span class="mono" style="font-size:11px;color:var(--ink-3)" data-orders-count></span></div>' +
                   '<div class="og__wrap" style="margin-top:8px" data-orders-wrap></div>' +
-                '</div>' +
+                '</div>' : '') +
                 '<div class="portal__tile">' +
                   '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3>Quick actions</h3></div>' +
                   '<div style="display:grid;gap:8px;margin-top:4px">' + actionRows + '</div>' +
@@ -102,12 +103,14 @@
 
         loadDocs(root.querySelector('[data-docs]'));
 
-        window.TBWCOrdersGrid.create({
-          sb: window.TBWCAuth.sb,
-          mode: 'rep',
-          container: root.querySelector('[data-orders-wrap]'),
-          countEl: root.querySelector('[data-orders-count]')
-        }).load();
+        if (showOrders) {
+          window.TBWCOrdersGrid.create({
+            sb: window.TBWCAuth.sb,
+            mode: 'rep',
+            container: root.querySelector('[data-orders-wrap]'),
+            countEl: root.querySelector('[data-orders-count]')
+          }).load();
+        }
       }
 
       function fmtSize(bytes) {
@@ -191,7 +194,7 @@
         var session = res.data && res.data.session;
         if (!session) { window.location.href = 'index.html'; return; }
 
-        window.TBWCAuth.sb.from('users').select('approved,first_name,last_name').eq('id', session.user.id).single().then(function (repRes) {
+        window.TBWCAuth.sb.from('users').select('approved,first_name,last_name,type,can_see_orders').eq('id', session.user.id).single().then(function (repRes) {
           if (repRes.error || !repRes.data || !repRes.data.approved) {
             window.TBWCAuth.signOut().then(function () {
               renderGate('Your registration is pending approval.');
@@ -199,7 +202,10 @@
             return;
           }
           var name = [repRes.data.first_name, repRes.data.last_name].filter(Boolean).join(' ');
-          renderDashboard(session.user.email, name);
+          // Reps always see their own orders (RLS: rep_id = auth.uid()); employees/admins
+          // only see the Orders tile at all once granted can_see_orders.
+          var showOrders = repRes.data.type === 'rep' || !!repRes.data.can_see_orders;
+          renderDashboard(session.user.email, name, showOrders);
         });
       });
     })();

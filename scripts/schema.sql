@@ -45,7 +45,9 @@ begin
   end if;
 end $$;
 
--- Employee-only permission flags. Meaningless (and left false) for rep/customer rows.
+-- Permission flags for order visibility / rep-lead approval. Normally set on
+-- employee rows, but also respected for admins — is_admin does NOT imply
+-- either flag; an admin must be granted them explicitly like anyone else.
 alter table public.users add column if not exists can_see_orders boolean not null default false;
 alter table public.users add column if not exists can_approve_rep_leads boolean not null default false;
 
@@ -61,23 +63,25 @@ set search_path = public
 stable
 as $$ select exists (select 1 from public.users where id = auth.uid() and is_admin); $$;
 
--- Is the CURRENT auth user an employee flagged to see all orders?
+-- Is the CURRENT auth user flagged to see all orders? Checked regardless of
+-- type/is_admin — an admin only sees every order if this flag is also on.
 create or replace function public.can_see_orders()
 returns boolean
 language sql
 security definer
 set search_path = public
 stable
-as $$ select exists (select 1 from public.users where id = auth.uid() and type = 'employee' and can_see_orders); $$;
+as $$ select exists (select 1 from public.users where id = auth.uid() and can_see_orders); $$;
 
--- Is the CURRENT auth user an employee flagged to approve rep leads?
+-- Is the CURRENT auth user flagged to approve rep leads? Checked regardless of
+-- type/is_admin — an admin only reviews leads if this flag is also on.
 create or replace function public.can_approve_rep_leads()
 returns boolean
 language sql
 security definer
 set search_path = public
 stable
-as $$ select exists (select 1 from public.users where id = auth.uid() and type = 'employee' and can_approve_rep_leads); $$;
+as $$ select exists (select 1 from public.users where id = auth.uid() and can_approve_rep_leads); $$;
 
 -- A user may read only their own profile (approval gate reads users.approved).
 drop policy if exists reps_select_own on public.users;
@@ -179,19 +183,20 @@ drop policy if exists rep_leads_insert_public on public.rep_leads;
 create policy rep_leads_insert_public on public.rep_leads
   for insert with check (true);
 
--- Admins, plus employees flagged can_approve_rep_leads, may review/approve leads.
+-- Anyone (admin or employee) flagged can_approve_rep_leads may review/approve
+-- leads. is_admin alone does NOT grant this — see can_approve_rep_leads() above.
 drop policy if exists rep_leads_select_admin on public.rep_leads;
 create policy rep_leads_select_admin on public.rep_leads
-  for select using (public.is_admin() or public.can_approve_rep_leads());
+  for select using (public.can_approve_rep_leads());
 
 drop policy if exists rep_leads_update_admin on public.rep_leads;
 create policy rep_leads_update_admin on public.rep_leads
-  for update using (public.is_admin() or public.can_approve_rep_leads())
-  with check (public.is_admin() or public.can_approve_rep_leads());
+  for update using (public.can_approve_rep_leads())
+  with check (public.can_approve_rep_leads());
 
 drop policy if exists rep_leads_delete_admin on public.rep_leads;
 create policy rep_leads_delete_admin on public.rep_leads
-  for delete using (public.is_admin() or public.can_approve_rep_leads());
+  for delete using (public.can_approve_rep_leads());
 
 -- ===========================================================================
 -- Rep-facing documents: private Storage bucket + access policies.
@@ -274,17 +279,15 @@ alter table public."order" add column if not exists rep_id uuid references publi
 
 alter table public."order" enable row level security;
 
-drop policy if exists order_select_admin on public."order";
-create policy order_select_admin on public."order"
-  for select using (public.is_admin());
-
 -- A rep may read only their own orders. Read-only by design — no insert/update
 -- policy for reps, so the rep portal grid stays view-only via RLS itself.
 drop policy if exists order_select_own_rep on public."order";
 create policy order_select_own_rep on public."order"
   for select using (rep_id = auth.uid());
 
--- Employees flagged can_see_orders may read every order (read-only, same as reps).
+-- Anyone (admin or employee) flagged can_see_orders may read every order.
+-- is_admin alone does NOT grant this — see can_see_orders() above.
+drop policy if exists order_select_admin on public."order";
 drop policy if exists order_select_employee on public."order";
 create policy order_select_employee on public."order"
   for select using (public.can_see_orders());

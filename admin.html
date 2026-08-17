@@ -157,7 +157,7 @@
         return s.length > n ? s.slice(0, n).trim() + '…' : s;
       }
 
-      function render(reps, leads, adminEmail, adminName) {
+      function render(reps, leads, adminEmail, adminName, showOrders) {
         var leadRows = leads.map(function (l) {
           var name = [l.first_name, l.last_name].filter(Boolean).join(' ') || '—';
           var invited = !!l.invited_at;
@@ -189,7 +189,7 @@
         };
 
         var employeeFlags = function (r) {
-          if (r.type !== 'employee') return '';
+          if (r.type !== 'employee' && !r.is_admin) return '';
           return '<div style="display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:11px;color:var(--ink-2)">' +
             '<label style="display:flex;align-items:center;gap:5px;cursor:pointer">' +
               '<input type="checkbox" data-flag-toggle="' + r.id + '" data-flag="can_see_orders"' + (r.can_see_orders ? ' checked' : '') + ' /> Can see orders' +
@@ -247,6 +247,9 @@
             '</div>' +
 
             // ---- Orders (public."order", imported from the build-list spreadsheet) ----
+            // Hidden unless this admin is also flagged can_see_orders — is_admin
+            // alone no longer grants order visibility (see schema.sql).
+            (showOrders ?
             cardHead('orders', 'Orders', '<span data-orders-count>Admin</span>',
               '<button class="btn btn--primary btn--sm" data-order-add>+ Add order</button>') +
             '<div ' + cardBodyAttrs('orders') + '>' +
@@ -254,7 +257,7 @@
               '<div class="adm__wrap adm__full" style="overflow-x:auto" data-orders-wrap>' +
                 '<div class="adm__empty">Loading…</div>' +
               '</div>' +
-            '</div>' +
+            '</div>' : '') +
 
             // ---- Rep Inquiries (the "Register" front door — no account yet) ----
             cardHead('leads', 'Rep Inquiries', '', '', 'adm__head--sp') +
@@ -312,17 +315,18 @@
         root.addEventListener('click', onDocRename);
         root.querySelector('[data-doccat-sel]').addEventListener('change', onCatChange);
         root.querySelector('[data-docsub-sel]').addEventListener('change', onSubChange);
-        var ordersGrid = window.TBWCOrdersGrid.create({
-          sb: sb,
-          mode: 'admin',
-          container: root.querySelector('[data-orders-wrap]'),
-          msgEl: root.querySelector('[data-ordersmsg]'),
-          countEl: root.querySelector('[data-orders-count]')
-        });
-        root.querySelector('[data-order-add]').addEventListener('click', ordersGrid.addNew);
+        if (showOrders) {
+          var ordersGrid = window.TBWCOrdersGrid.create({
+            sb: sb,
+            mode: 'admin',
+            container: root.querySelector('[data-orders-wrap]'),
+            msgEl: root.querySelector('[data-ordersmsg]'),
+            countEl: root.querySelector('[data-orders-count]')
+          });
+          root.querySelector('[data-order-add]').addEventListener('click', ordersGrid.addNew);
+        }
         root.addEventListener('click', onCardToggle);
         loadDocs();
-        ordersGrid.load();
       }
 
       var DOCS_BUCKET = (window.TBWCAuth && window.TBWCAuth.DOCS_BUCKET) || 'rep-docs';
@@ -655,6 +659,7 @@
 
       var currentAdminEmail = '';
       var currentAdminName = '';
+      var currentAdminCanSeeOrders = false;
       function load() {
         Promise.all([
           sb.from('users')
@@ -668,7 +673,7 @@
           var repsRes = results[0], leadsRes = results[1];
           if (repsRes.error) { renderGate('Could not load reps: ' + repsRes.error.message); return; }
           if (leadsRes.error) { renderGate('Could not load inquiries: ' + leadsRes.error.message); return; }
-          render(repsRes.data || [], leadsRes.data || [], currentAdminEmail, currentAdminName);
+          render(repsRes.data || [], leadsRes.data || [], currentAdminEmail, currentAdminName, currentAdminCanSeeOrders);
         });
       }
 
@@ -680,12 +685,13 @@
         currentAdminEmail = session.user.email;
 
         // Gate on is_admin (own row is readable via users_select_own).
-        sb.from('users').select('is_admin,approved,first_name,last_name').eq('id', session.user.id).single().then(function (me) {
+        sb.from('users').select('is_admin,approved,first_name,last_name,can_see_orders').eq('id', session.user.id).single().then(function (me) {
           if (me.error || !me.data || !me.data.is_admin) {
             renderGate('Not authorized — this page is for administrators only.');
             return;
           }
           currentAdminName = [me.data.first_name, me.data.last_name].filter(Boolean).join(' ');
+          currentAdminCanSeeOrders = !!me.data.can_see_orders;
           load();
         });
       });
