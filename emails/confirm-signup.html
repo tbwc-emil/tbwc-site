@@ -1,6 +1,9 @@
 <!-- TBWC Rep Portal — Confirm signup email.
-     Paste into Supabase: Auth > Email Templates > "Confirm signup".
-     Supabase injects {{ .ConfirmationURL }} at send time. -->
+     No longer used as a Supabase Auth email template — the rep-signup edge function
+     (supabase/functions/rep-signup/index.ts) now generates and sends this itself via
+     the app's own SMTP, so the confirm email goes through the same codepath as
+     invite/lead-notify. Kept here as the original design reference; the inlined
+     copy in confirmEmail() there is the version that actually sends. -->
 <!doctype html>
 <html lang="en">
 <head>

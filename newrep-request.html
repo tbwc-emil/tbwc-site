@@ -126,9 +126,9 @@
 
         window.TBWCAuth.verifyTurnstile(turnstileToken).then(function (res) {
           if (res.error) throw res.error;
-          return window.TBWCAuth.sb.from('rep_leads').insert({
-            first_name: f('firstName'),
-            last_name: f('lastName'),
+          return window.TBWCAuth.invokeFn('submit-rep-lead', {
+            firstName: f('firstName'),
+            lastName: f('lastName'),
             email: f('email'),
             phone: f('phone'),
             about: f('pleaseShare')

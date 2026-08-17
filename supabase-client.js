@@ -9,9 +9,10 @@
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Base URL for links mailed by Supabase auth (email confirm, password reset).
-  // Hardcoded to the prod domain (not window.location.href) so testing against the
-  // prod DB from localhost never mails a real user a dead localhost link.
+  // Base URL for emailed links — signup confirm (sent by rep-signup, below) and
+  // password reset (still sent by Supabase's own mailer). Hardcoded to the prod
+  // domain (not window.location.href) so testing against the prod DB from
+  // localhost never mails a real user a dead localhost link.
   var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   var baseUrl = isLocal ? window.location.href : 'https://tbwctechnology.com/';
 
@@ -46,39 +47,61 @@
     return { data: true };
   }
 
+  // Calls an edge function and, on failure, extracts the real {error, code} JSON
+  // body — sb.functions.invoke() only gives a generic "non-2xx status" error by
+  // default, with the actual body sitting unread on error.context. Business logic
+  // that used to live in DB triggers/functions (auto-approve on email confirm,
+  // dup-lead guard, etc.) now runs in these functions instead, so callers need the
+  // real message back the way they'd have gotten one from Postgres before.
+  async function invokeFn(name, body) {
+    var res = await sb.functions.invoke(name, { body: body });
+    if (res.error) {
+      var message = 'Something went wrong — please try again.';
+      var code;
+      if (res.error.context && typeof res.error.context.json === 'function') {
+        try {
+          var errBody = await res.error.context.json();
+          if (errBody && errBody.error) message = errBody.error;
+          if (errBody && errBody.code) code = errBody.code;
+        } catch (e) { /* non-JSON error body — fall back to generic message */ }
+      }
+      return { error: { message: message, code: code } };
+    }
+    return { data: res.data };
+  }
+
   // fields: { email, password, firstName, lastName, agencyName, url, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
-  // The users profile row is created by the on_auth_user_created DB trigger from this
-  // metadata — no client insert (works with email confirmation on, no post-signup session needed).
+  // Goes through the rep-signup edge function (service role + admin.generateLink)
+  // instead of sb.auth.signUp() — that call would hand dispatch of the confirmation
+  // email to Supabase's own built-in mailer, a black box the app can't see into or
+  // get a real error back from. Routing through our own function keeps this on the
+  // same SMTP codepath as the invite/lead-notify emails, with real success/failure
+  // signal instead of a blind "check your email".
+  // The users profile row is created by confirm-signup once the emailed link is
+  // clicked (app code, not a DB trigger) — no client insert needed here.
   // Only reachable today via an emailed invite link (rep-signup.html), so there's no
   // separate Turnstile check here — the unguessable invite token is the gate.
-  async function signUp(fields) {
-    var signUpRes = await sb.auth.signUp({
+  function signUp(fields) {
+    return invokeFn('rep-signup', {
       email: fields.email,
       password: fields.password,
-      options: {
-        emailRedirectTo: new URL('index.html', baseUrl).href,
-        data: {
-          first_name: fields.firstName || null,
-          last_name: fields.lastName || null,
-          agency_name: fields.agencyName || null,
-          url: fields.url || null,
-          title: fields.title || null,
-          work_phone: fields.workPhone || null,
-          ext: fields.ext || null,
-          mobile: fields.mobile || null,
-          addr1: fields.addr1 || null,
-          addr2: fields.addr2 || null,
-          city: fields.city || null,
-          state: fields.state || null,
-          postal: fields.postal || null,
-          about: fields.about || null,
-          invite_token: fields.inviteToken || null
-        }
-      }
+      firstName: fields.firstName || null,
+      lastName: fields.lastName || null,
+      agencyName: fields.agencyName || null,
+      url: fields.url || null,
+      title: fields.title || null,
+      workPhone: fields.workPhone || null,
+      ext: fields.ext || null,
+      mobile: fields.mobile || null,
+      addr1: fields.addr1 || null,
+      addr2: fields.addr2 || null,
+      city: fields.city || null,
+      state: fields.state || null,
+      postal: fields.postal || null,
+      about: fields.about || null,
+      inviteToken: fields.inviteToken || null,
+      redirectTo: new URL('index.html', baseUrl).href
     });
-    if (signUpRes.error) return { error: signUpRes.error };
-    if (!signUpRes.data.user) return { error: { message: 'Sign-up failed — try again.' } };
-    return { data: signUpRes.data };
   }
 
   function sendPasswordReset(email) {
@@ -144,6 +167,7 @@
     signIn: signIn,
     signUp: signUp,
     verifyTurnstile: verifyTurnstile,
+    invokeFn: invokeFn,
     sendPasswordReset: sendPasswordReset,
     updatePassword: updatePassword,
     signOut: signOut,

@@ -10,11 +10,8 @@
 // per-environment secret: localhost/127.0.0.1 -> DEV_NOTIFY_EMAIL, anything
 // else -> ADMIN_NOTIFY_EMAIL. Keeps test inquiries out of the real inbox.
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import nodemailer from 'npm:nodemailer@^9';
+import { esc, wrapEmail, sendMail, smtpConfigured } from '../_shared/mailer.ts';
 
-const SMTP_USER = Deno.env.get('SMTP_USER');
-const SMTP_PASS = Deno.env.get('SMTP_PASS');
-const SMTP_FROM = Deno.env.get('SMTP_FROM') || SMTP_USER;
 const ADMIN_NOTIFY_EMAIL = Deno.env.get('ADMIN_NOTIFY_EMAIL') || 'info@tbwcinc.com';
 const DEV_NOTIFY_EMAIL = Deno.env.get('DEV_NOTIFY_EMAIL') || 'emil@tbwcinc.com';
 
@@ -33,39 +30,6 @@ function json(body: unknown, status: number) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
-}
-
-function esc(s: unknown): string {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
-}
-
-// Shared branded wrapper — same look as emails/confirm-signup.html.
-function wrapEmail(preheader: string, title: string, bodyHtml: string): string {
-  return `<!doctype html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light only"></head>
-<body style="margin:0;padding:0;background:#f2f1ee;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f1ee;">
-<tr><td align="center" style="padding:32px 16px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#fbfaf7;border:1px solid #e2e2e6;border-radius:10px;overflow:hidden;font-family:'Geist',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-<tr><td style="padding:28px 32px 20px;border-bottom:1px solid #e2e2e6;">
-<span style="font-size:20px;font-weight:700;letter-spacing:0.5px;color:#1b1d23;">TBWC</span>
-<span style="font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:11px;color:#7c7f89;text-transform:uppercase;letter-spacing:1.5px;margin-left:8px;">Rep Portal</span>
-</td></tr>
-<tr><td style="padding:32px;">
-<h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:600;color:#1b1d23;">${esc(title)}</h1>
-${bodyHtml}
-</td></tr>
-<tr><td style="padding:20px 32px;border-top:1px solid #e2e2e6;background:#f7f6f2;">
-<p style="margin:0;font-size:12px;color:#a2a4ac;">&copy; TBWC Technology</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
 }
 
 function leadNotifyEmail(f: { firstName: string; lastName: string; email: string; phone: string; about: string }) {
@@ -98,28 +62,10 @@ function inviteEmail(f: { firstName: string; link: string }) {
   };
 }
 
-// Same shape as scripts/smtp-test.js, already verified against these M365 creds.
-const transport = nodemailer.createTransport({
-  host: 'smtp.office365.com',
-  port: 587,
-  secure: false, // STARTTLS on 587, not implicit TLS
-  auth: { user: SMTP_USER, pass: SMTP_PASS },
-  requireTLS: true,
-});
-
-function sendMail(to: string, subject: string, html: string) {
-  return new Promise<void>((resolve, reject) => {
-    transport.sendMail(
-      { from: `"TBWC Technology" <${SMTP_FROM}>`, to, subject, html },
-      (err: Error | null) => (err ? reject(err) : resolve())
-    );
-  });
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  if (!SMTP_USER || !SMTP_PASS) return json({ error: 'Server misconfigured' }, 500);
+  if (!smtpConfigured()) return json({ error: 'Server misconfigured' }, 500);
 
   let body: any;
   try {

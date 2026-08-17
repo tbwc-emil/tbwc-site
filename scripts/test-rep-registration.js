@@ -3,9 +3,12 @@
 // directly (schema, RLS, edge functions) and cleans up everything it creates.
 //   node scripts/test-rep-registration.js
 //
-// Does NOT exercise supabase.auth.signUp() or send a real invite/notify email
-// on every run — those need a deliverable inbox and would spam it each time.
-// See emails/confirm-signup.html + admin.html for the parts this can't cover.
+// Does NOT exercise rep-signup's happy path or send a real invite/notify/confirm
+// email on every run — those need a deliverable inbox and would spam it each
+// time. See emails/confirm-signup.html + admin.html for the parts this can't
+// cover. The dup-lead-vs-existing-rep guard and the email-confirm auto-approve
+// step both used to be DB triggers; they're edge functions now
+// (submit-rep-lead, confirm-signup) — the database only stores data.
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
@@ -63,13 +66,12 @@ async function testSchema(db) {
   const index = await db.query("select 1 from pg_indexes where tablename='rep_leads' and indexname='rep_leads_email_unique'");
   assert(index.rowCount === 1, 'rep_leads_email_unique index exists');
 
+  // These all used to be DB triggers; the logic now lives in edge functions
+  // (confirm-signup, submit-rep-lead) instead, so none of them should exist.
   const triggers = await db.query(
     "select tgname from pg_trigger where tgname in ('on_auth_user_created','on_auth_user_email_confirmed','check_lead_email_available')"
   );
-  const gotTriggers = triggers.rows.map((r) => r.tgname);
-  assert(gotTriggers.includes('on_auth_user_created'), 'on_auth_user_created trigger exists');
-  assert(gotTriggers.includes('on_auth_user_email_confirmed'), 'on_auth_user_email_confirmed trigger exists (auto-approve)');
-  assert(gotTriggers.includes('check_lead_email_available'), 'check_lead_email_available trigger exists (dup-vs-reps guard)');
+  assert(triggers.rowCount === 0, 'no leftover DB triggers (email-confirm + dup-lead guard moved to edge functions)', triggers.rows.map((r) => r.tgname).join(', '));
 }
 
 async function testAnonInsert(db) {
@@ -94,13 +96,16 @@ async function testDuplicateGuards(db) {
 
   await db.query('delete from public.rep_leads where email = $1', [email]);
 
+  // This guard is now enforced by submit-rep-lead (service role), not a DB
+  // trigger — a raw REST insert like the calls above would no longer catch it,
+  // since rep_leads_insert_public has no way to check public.users itself.
   const repRow = await db.query("select email from public.users where type = 'rep' limit 1");
   if (repRow.rowCount) {
     const repEmail = repRow.rows[0].email;
-    const dupRep = await rest('POST', 'rep_leads', { body: { first_name: 'Existing', last_name: 'Rep', email: repEmail } });
+    const dupRep = await fn('submit-rep-lead', { firstName: 'Existing', lastName: 'Rep', email: repEmail });
     assert(
       dupRep.status === 400 && dupRep.json && dupRep.json.code === 'P0001',
-      'insert with an existing rep\'s email rejected (P0001)',
+      'submit-rep-lead rejects an existing rep\'s email (P0001)',
       JSON.stringify(dupRep.json)
     );
   } else {
@@ -109,7 +114,7 @@ async function testDuplicateGuards(db) {
 }
 
 async function testEdgeFunctions(db) {
-  console.log('\nEdge functions — verify-turnstile, get-lead, send-mail');
+  console.log('\nEdge functions — verify-turnstile, get-lead, send-mail, rep-signup, submit-rep-lead, confirm-signup');
 
   const badTurnstile = await fn('verify-turnstile', { token: 'not-a-real-token' });
   assert(badTurnstile.status === 403 && badTurnstile.json && badTurnstile.json.success === false, 'verify-turnstile rejects a bogus token');
@@ -133,6 +138,35 @@ async function testEdgeFunctions(db) {
 
   const badType = await fn('send-mail', { type: 'not-a-real-type' });
   assert(badType.status === 400, 'send-mail rejects an unknown type (structural check only — not sending a real email)');
+
+  // Structural checks only — not exercising the happy path (would create a real
+  // auth user / send a real email each run).
+  const missingSignupFields = await fn('rep-signup', { email: 'test@example.com' });
+  assert(missingSignupFields.status === 400, 'rep-signup rejects a request missing password/redirectTo');
+
+  const repRow = await db.query("select email from public.users where type = 'rep' limit 1");
+  if (repRow.rowCount) {
+    const alreadyRegistered = await fn('rep-signup', {
+      email: repRow.rows[0].email, password: 'irrelevant-wrong-password', redirectTo: 'https://tbwctechnology.com/index.html',
+    });
+    assert(
+      alreadyRegistered.status === 400 && /already registered/i.test((alreadyRegistered.json || {}).error || ''),
+      'rep-signup refuses to re-issue a link for an already-confirmed email',
+      JSON.stringify(alreadyRegistered.json)
+    );
+  } else {
+    console.log('  [SKIP] no existing reps row to test rep-signup\'s already-registered case against');
+  }
+
+  const missingLeadFields = await fn('submit-rep-lead', { email: 'test@example.com' });
+  assert(missingLeadFields.status === 400, 'submit-rep-lead rejects a request missing firstName/lastName');
+
+  // confirm-signup is a GET link a browser navigates to (no Authorization header),
+  // deployed with --no-verify-jwt — hit it directly rather than through fn().
+  const confirmRes = await fetch(FN_URL + 'confirm-signup?token_hash=not-a-real-token&redirect_to=https%3A%2F%2Ftbwctechnology.com%2Findex.html', { redirect: 'manual' });
+  assert(confirmRes.status === 302, 'confirm-signup runs without a JWT (redirects, not 401)', String(confirmRes.status));
+  const location = confirmRes.headers.get('location') || '';
+  assert(location.includes('#error='), 'confirm-signup redirects with an error hash for a bogus token', location);
 }
 
 async function main() {

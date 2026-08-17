@@ -104,77 +104,25 @@ create policy users_delete_admin on public.users
   for delete using (public.is_admin());
 
 -- No client INSERT policy on purpose:
---  * The users row is created by the trigger below (runs as owner), not the client.
---  * approved stays false; a non-admin client has no update policy, so it cannot self-approve.
+--  * The users row is created by the confirm-signup edge function (service role),
+--    once the rep confirms their email — not by the client, and not at signup
+--    time, so an abandoned/never-verified signup leaves no row for admin.html to
+--    show as a stray "pending" rep. See supabase/functions/confirm-signup.
+--  * approved stays false until that point; a non-admin client has no update
+--    policy, so it cannot self-approve.
 -- Drop the old client-insert policy if a previous version created it.
 drop policy if exists reps_insert_own on public.users;
 drop policy if exists users_insert_own on public.users;
 
--- Old signup-time trigger — the row is now created on confirm instead (below).
+-- Both the signup-time trigger and the later email-confirm trigger that replaced
+-- it (handle_new_rep, then handle_rep_email_confirmed) are gone — creating the
+-- profile row and consuming the invite lead now happens in the confirm-signup
+-- edge function instead of a DB trigger, so the database stays limited to
+-- storage/RLS and doesn't carry app-specific automation.
 drop trigger if exists on_auth_user_created on auth.users;
 drop function if exists public.handle_new_rep();
-
--- The user profile row is created only once the rep confirms their email —
--- not at signup — so an abandoned/never-verified signup leaves no row for
--- admin.html to show as a stray "pending" rep. Supabase still creates the
--- underlying auth.users row immediately (out of our control); this just
--- defers the public.users profile until confirmation. Lands as type='rep'
--- (the column default) — this trigger only fires from the rep signup flow;
--- customer/employee rows are created directly by an admin, not through signup.
--- Profile fields arrive in raw_user_meta_data (set via supabase.auth.signUp
--- options.data) and are still readable off auth.users at confirm time.
--- Review already happened at the inquiry stage (admin approved the lead
--- before the invite was ever sent), so email confirmation is the last gate
--- before login rather than a separate manual approval step — approved is set
--- true on insert here.
-create or replace function public.handle_rep_email_confirmed()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.users (
-    id, email, first_name, last_name, agency_name, url, title,
-    work_phone, ext, mobile, addr1, addr2, city, state, postal, about, approved
-  ) values (
-    new.id,
-    new.email,
-    new.raw_user_meta_data->>'first_name',
-    new.raw_user_meta_data->>'last_name',
-    new.raw_user_meta_data->>'agency_name',
-    new.raw_user_meta_data->>'url',
-    new.raw_user_meta_data->>'title',
-    new.raw_user_meta_data->>'work_phone',
-    new.raw_user_meta_data->>'ext',
-    new.raw_user_meta_data->>'mobile',
-    new.raw_user_meta_data->>'addr1',
-    new.raw_user_meta_data->>'addr2',
-    new.raw_user_meta_data->>'city',
-    new.raw_user_meta_data->>'state',
-    new.raw_user_meta_data->>'postal',
-    new.raw_user_meta_data->>'about',
-    true
-  )
-  on conflict (id) do update set approved = true;
-
-  -- Consume the inquiry this signup was invited from, if any (rep-signup.html
-  -- passes it through as signup metadata). Cleans up the lead row and stops
-  -- the emailed invite link from being reusable once the account exists.
-  if new.raw_user_meta_data->>'invite_token' is not null then
-    delete from public.rep_leads where invite_token = new.raw_user_meta_data->>'invite_token';
-  end if;
-
-  return new;
-end;
-$$;
-
 drop trigger if exists on_auth_user_email_confirmed on auth.users;
-create trigger on_auth_user_email_confirmed
-  after update on auth.users
-  for each row
-  when (new.email_confirmed_at is not null and old.email_confirmed_at is null)
-  execute function public.handle_rep_email_confirmed();
+drop function if exists public.handle_rep_email_confirmed();
 
 -- ===========================================================================
 -- Rep inquiries ("Register" front door). A short, unauthenticated form
@@ -205,27 +153,15 @@ create unique index if not exists rep_leads_email_unique on public.rep_leads (lo
 
 alter table public.rep_leads enable row level security;
 
--- Blocks a new inquiry from someone who already has a user account. Anon can't
--- SELECT public.users to check this client-side, so it's enforced here instead
--- — security definer bypasses RLS to read users, runs before the insert lands.
-create or replace function public.check_lead_email_available()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if exists (select 1 from public.users where lower(email) = lower(new.email)) then
-    raise exception 'This email is already registered. Sign in from the site header, or contact support if you need help.';
-  end if;
-  return new;
-end;
-$$;
-
+-- The "already has a user account" guard that used to run here as a BEFORE
+-- INSERT trigger (check_lead_email_available) is gone — that check now runs in
+-- the submit-rep-lead edge function instead (service role, same reasoning: anon
+-- can't SELECT public.users to check this client-side without a policy that
+-- would let emails be enumerated). newrep-request.html goes through that
+-- function, not a direct insert, so the guard still applies to the app's own
+-- flow — a request straight against the REST API with this policy would skip it.
 drop trigger if exists check_lead_email_available on public.rep_leads;
-create trigger check_lead_email_available
-  before insert on public.rep_leads
-  for each row execute function public.check_lead_email_available();
+drop function if exists public.check_lead_email_available();
 
 -- Public inquiry form — anyone may create a lead. Not a meaningful security
 -- boundary on its own (same trust model as the Turnstile-then-write pattern
