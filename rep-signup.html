@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Complete Registration — TBWC Technology</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -87,6 +88,11 @@
             <label for="nr-title">Title / Position</label>
             <input class="nr-input" id="nr-title" type="text" name="title" />
           </div>
+        </div>
+
+        <div class="nr-field">
+          <label for="nr-url">Website URL</label>
+          <input class="nr-input" id="nr-url" type="url" name="url" placeholder="https://" />
         </div>
 
         <div class="nr-field">
@@ -224,6 +230,7 @@
           firstName: f('firstName'),
           lastName: f('lastName'),
           agencyName: f('agencyName'),
+          url: f('url'),
           title: f('title'),
           workPhone: f('workPhone'),
           ext: f('ext'),

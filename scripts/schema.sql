@@ -12,6 +12,7 @@ create table if not exists public.users (
   first_name  text,
   last_name   text,
   agency_name text,
+  url         text,
   title       text,
   work_phone  text,
   ext         text,
@@ -25,6 +26,9 @@ create table if not exists public.users (
   approved    boolean not null default false,
   created_at  timestamptz not null default now()
 );
+
+-- Backfills url onto a pre-existing users table (create table above only applies fresh).
+alter table public.users add column if not exists url text;
 
 -- Admin flag. Grants access to the browser admin page (admin.html) to approve reps.
 -- Only the service role (bootstrap via scripts/make-admin.js) or an existing admin can set it.
@@ -106,12 +110,24 @@ create policy users_delete_admin on public.users
 drop policy if exists reps_insert_own on public.users;
 drop policy if exists users_insert_own on public.users;
 
--- Auto-create the user profile when an auth user signs up. Lands as type='rep'
+-- Old signup-time trigger — the row is now created on confirm instead (below).
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists public.handle_new_rep();
+
+-- The user profile row is created only once the rep confirms their email —
+-- not at signup — so an abandoned/never-verified signup leaves no row for
+-- admin.html to show as a stray "pending" rep. Supabase still creates the
+-- underlying auth.users row immediately (out of our control); this just
+-- defers the public.users profile until confirmation. Lands as type='rep'
 -- (the column default) — this trigger only fires from the rep signup flow;
 -- customer/employee rows are created directly by an admin, not through signup.
--- Profile fields arrive in raw_user_meta_data (set via supabase.auth.signUp options.data).
--- security definer => bypasses RLS; runs whether or not email confirmation is on.
-create or replace function public.handle_new_rep()
+-- Profile fields arrive in raw_user_meta_data (set via supabase.auth.signUp
+-- options.data) and are still readable off auth.users at confirm time.
+-- Review already happened at the inquiry stage (admin approved the lead
+-- before the invite was ever sent), so email confirmation is the last gate
+-- before login rather than a separate manual approval step — approved is set
+-- true on insert here.
+create or replace function public.handle_rep_email_confirmed()
 returns trigger
 language plpgsql
 security definer
@@ -119,14 +135,15 @@ set search_path = public
 as $$
 begin
   insert into public.users (
-    id, email, first_name, last_name, agency_name, title,
-    work_phone, ext, mobile, addr1, addr2, city, state, postal, about
+    id, email, first_name, last_name, agency_name, url, title,
+    work_phone, ext, mobile, addr1, addr2, city, state, postal, about, approved
   ) values (
     new.id,
     new.email,
     new.raw_user_meta_data->>'first_name',
     new.raw_user_meta_data->>'last_name',
     new.raw_user_meta_data->>'agency_name',
+    new.raw_user_meta_data->>'url',
     new.raw_user_meta_data->>'title',
     new.raw_user_meta_data->>'work_phone',
     new.raw_user_meta_data->>'ext',
@@ -136,9 +153,10 @@ begin
     new.raw_user_meta_data->>'city',
     new.raw_user_meta_data->>'state',
     new.raw_user_meta_data->>'postal',
-    new.raw_user_meta_data->>'about'
+    new.raw_user_meta_data->>'about',
+    true
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set approved = true;
 
   -- Consume the inquiry this signup was invited from, if any (rep-signup.html
   -- passes it through as signup metadata). Cleans up the lead row and stops
@@ -147,27 +165,6 @@ begin
     delete from public.rep_leads where invite_token = new.raw_user_meta_data->>'invite_token';
   end if;
 
-  return new;
-end;
-$$;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_rep();
-
--- Auto-approve once the rep confirms their email. Review already happened at
--- the inquiry stage (admin approved the lead before the invite was ever sent),
--- so email confirmation is the last gate before login rather than a separate
--- manual approval step.
-create or replace function public.handle_rep_email_confirmed()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  update public.users set approved = true where id = new.id;
   return new;
 end;
 $$;

@@ -46,7 +46,7 @@
     return { data: true };
   }
 
-  // fields: { email, password, firstName, lastName, agencyName, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
+  // fields: { email, password, firstName, lastName, agencyName, url, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
   // The users profile row is created by the on_auth_user_created DB trigger from this
   // metadata — no client insert (works with email confirmation on, no post-signup session needed).
   // Only reachable today via an emailed invite link (rep-signup.html), so there's no
@@ -61,6 +61,7 @@
           first_name: fields.firstName || null,
           last_name: fields.lastName || null,
           agency_name: fields.agencyName || null,
+          url: fields.url || null,
           title: fields.title || null,
           work_phone: fields.workPhone || null,
           ext: fields.ext || null,
