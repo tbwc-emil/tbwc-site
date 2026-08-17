@@ -8,6 +8,8 @@
 // whatever flag values it found before exiting.
 //   node scripts/test-order-permissions.js
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const { Client } = require('pg');
 
 let pass = 0, fail = 0;
@@ -48,6 +50,27 @@ async function testSchema(db) {
   fnDefs.rows.forEach((r) => {
     assert(!/type\s*=\s*'employee'/.test(r.prosrc), r.proname + "() no longer requires type = 'employee' (so it also applies to admins)", r.prosrc);
   });
+}
+
+// delete-lead bypasses RLS via the service role, so it re-checks the caller's
+// role itself (see supabase/functions/_shared/auth.ts + delete-lead/index.ts).
+// Can't exercise that check end-to-end with a real admin session here — same
+// reason test-rep-registration.js never signs in as a real user: no service
+// role key / JWT secret available locally to mint one. This guards the exact
+// regression instead: the authorization line must require canApproveRepLeads
+// on its own, not `isAdmin || canApproveRepLeads` (which is what let an admin
+// without the flag delete leads before today's fix).
+function testDeleteLeadAuthorization() {
+  console.log('\ndelete-lead edge function — source-level regression guard (no way to mint a real session locally)');
+
+  const src = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'functions', 'delete-lead', 'index.ts'), 'utf8');
+  const authLine = src.split('\n').find((l) => l.includes('caller.ok') && l.includes('403'));
+
+  assert(!!authLine, 'found the authorization check line in delete-lead/index.ts', authLine);
+  if (authLine) {
+    assert(!/caller\.isAdmin/.test(authLine), 'authorization check no longer references caller.isAdmin (is_admin must not bypass canApproveRepLeads)', authLine);
+    assert(/!\s*caller\.canApproveRepLeads/.test(authLine), 'authorization check requires caller.canApproveRepLeads', authLine);
+  }
 }
 
 async function testAdminWithoutFlagsSeesNothing(db) {
@@ -115,6 +138,7 @@ async function main() {
   await db.connect();
   try {
     await testSchema(db);
+    testDeleteLeadAuthorization();
     await testAdminWithoutFlagsSeesNothing(db);
     await testAdminWithFlagsSeesEverything(db);
   } finally {

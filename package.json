@@ -10,7 +10,9 @@
     "rep:approve": "node scripts/approve-rep.js",
     "rep:admin": "node scripts/make-admin.js",
     "smtp:test": "node scripts/smtp-test.js",
-    "test:registration": "node scripts/test-rep-registration.js"
+    "test": "npm run test:registration && npm run test:permissions",
+    "test:registration": "node scripts/test-rep-registration.js",
+    "test:permissions": "node scripts/test-order-permissions.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
