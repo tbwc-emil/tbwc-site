@@ -47,6 +47,21 @@ function leadNotifyEmail(f: { firstName: string; lastName: string; email: string
   };
 }
 
+function reverifyEmail(f: { firstName: string; link: string }) {
+  const body =
+    `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#4b4e57;">Hi ${esc(f.firstName)}, for security we ask every rep to re-verify their account every 90 days.</p>` +
+    `<p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#4b4e57;">Your account is locked until you confirm you still control this email address. Click below to unlock it.</p>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#2f5bd6" style="border-radius:7px;">` +
+    `<a href="${esc(f.link)}" target="_blank" style="display:inline-block;padding:13px 26px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:7px;">Verify my account</a>` +
+    `</td></tr></table>` +
+    `<p style="margin:28px 0 8px;font-size:13px;line-height:1.5;color:#7c7f89;">Or paste this link into your browser:</p>` +
+    `<p style="margin:0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.5;word-break:break-all;color:#2f5bd6;">${esc(f.link)}</p>`;
+  return {
+    subject: 'Re-verify your TBWC Rep Portal account',
+    html: wrapEmail('Your TBWC Rep Portal account needs re-verification.', 'Re-verify your account', body),
+  };
+}
+
 function inviteEmail(f: { firstName: string; link: string }) {
   const body =
     `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#4b4e57;">Hi ${esc(f.firstName)}, thanks for your interest in becoming a TBWC representative — we'd like to move forward.</p>` +
@@ -81,6 +96,10 @@ serve(async (req) => {
     } else if (body.type === 'invite') {
       if (!body.email || !body.link) return json({ error: 'Missing email or link' }, 400);
       const { subject, html } = inviteEmail(body);
+      await sendMail(body.email, subject, html);
+    } else if (body.type === 'reverify') {
+      if (!body.email || !body.link) return json({ error: 'Missing email or link' }, 400);
+      const { subject, html } = reverifyEmail(body);
       await sendMail(body.email, subject, html);
     } else {
       return json({ error: 'Unknown type' }, 400);
