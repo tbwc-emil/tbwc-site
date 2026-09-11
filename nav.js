@@ -145,7 +145,10 @@
     window.TBWCAuth.signIn(email, passwordInput.value).then(function (res) {
       submitBtn.disabled = false;
       if (res.error) { showMsg(res.error.message, true); return; }
-      window.location.href = res.isAdmin ? 'admin.html' : 'portal.html';
+      // Everyone lands in the React portal at /portal/. It's the same origin, so the
+      // session supabase-js just stored is already there — no second login.
+      // admin.html still works if you go straight to it.
+      window.location.href = '/portal/';
     });
   });
 

@@ -37,7 +37,7 @@
             '<ul>' +
               '<li><a href="' + base + '#reps">Register</a></li>' +
               '<li><a href="reps.html">Territory Map</a></li>' +
-              '<li><a href="portal.html">Login</a></li>' +
+              '<li><a href="/portal/">Login</a></li>' +
             '</ul>' +
           '</div>' +
           '<div class="foot__col">' +
