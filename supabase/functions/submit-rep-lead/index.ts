@@ -1,4 +1,4 @@
-// Creates a rep_leads row for the public inquiry form (newrep-request.html) and
+// Creates a rep_leads row for the public inquiry form (register.html) and
 // emails the applicant a verify-your-email link, replacing what the
 // check_lead_email_available() DB trigger used to do (dropped from schema.sql) —
 // the "already has an account" guard now runs here in app code instead of
@@ -93,7 +93,7 @@ serve(async (req) => {
 
   const link =
     `${SUPABASE_URL}/functions/v1/verify-lead-email?token=${encodeURIComponent(verifyToken)}` +
-    `&redirect_to=${encodeURIComponent(redirectTo || 'https://tbwctechnology.com/newrep-request.html')}`;
+    `&redirect_to=${encodeURIComponent(redirectTo || 'https://tbwctechnology.com/register.html')}`;
 
   try {
     const { subject, html } = verifyLeadEmail({ firstName, link });

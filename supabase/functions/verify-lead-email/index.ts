@@ -14,7 +14,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const FALLBACK_REDIRECT = 'https://tbwctechnology.com/newrep-request.html';
+const FALLBACK_REDIRECT = 'https://tbwctechnology.com/register.html';
 
 serve(async (req) => {
   const url = new URL(req.url);

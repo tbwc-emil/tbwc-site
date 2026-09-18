@@ -10,7 +10,7 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Base URL for emailed links — verify-lead-email's redirect back to
-  // newrep-request.html, and password reset (still sent by Supabase's own
+  // register.html, and password reset (still sent by Supabase's own
   // mailer). Hardcoded to the prod domain (not window.location.href) so testing
   // against the prod DB from localhost never mails a real user a dead
   // localhost link.

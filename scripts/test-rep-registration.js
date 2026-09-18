@@ -36,7 +36,7 @@ async function fn(name, body) {
   return { status: res.status, json };
 }
 
-// No Prefer: return=representation on purpose — matches how newrep-request.html
+// No Prefer: return=representation on purpose — matches how register.html
 // actually calls insert() (no .select()). Requesting the row back would also
 // require a SELECT policy anon doesn't have here (INSERT...RETURNING needs one
 // too), which would fail these calls for a reason that has nothing to do with
@@ -75,7 +75,7 @@ async function testSchema(db) {
 }
 
 async function testAnonInsert(db) {
-  console.log('\nAnon insert — matches how newrep-request.html actually calls it (no RETURNING)');
+  console.log('\nAnon insert — matches how register.html actually calls it (no RETURNING)');
   const email = 'test-anon-insert-' + Date.now() + '@example.com';
   const res = await rest('POST', 'rep_leads', { body: { first_name: 'Test', last_name: 'Anon', email } });
   assert(res.status === 201, 'anon insert succeeds (201)', JSON.stringify(res.json));
@@ -161,7 +161,7 @@ async function testEdgeFunctions(db) {
 
   // verify-lead-email is a GET link a browser navigates to (no Authorization
   // header), deployed with --no-verify-jwt — hit it directly rather than through fn().
-  const verifyRes = await fetch(FN_URL + 'verify-lead-email?token=not-a-real-token&redirect_to=https%3A%2F%2Ftbwctechnology.com%2Fnewrep-request.html', { redirect: 'manual' });
+  const verifyRes = await fetch(FN_URL + 'verify-lead-email?token=not-a-real-token&redirect_to=https%3A%2F%2Ftbwctechnology.com%2Fregister.html', { redirect: 'manual' });
   assert(verifyRes.status === 302, 'verify-lead-email runs without a JWT (redirects, not 401)', String(verifyRes.status));
   const location = verifyRes.headers.get('location') || '';
   assert(location.includes('verify=invalid'), 'verify-lead-email redirects with ?verify=invalid for a bogus token', location);

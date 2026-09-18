@@ -169,7 +169,7 @@ alter table public.rep_leads enable row level security;
 -- INSERT trigger (check_lead_email_available) is gone — that check now runs in
 -- the submit-rep-lead edge function instead (service role, same reasoning: anon
 -- can't SELECT public.users to check this client-side without a policy that
--- would let emails be enumerated). newrep-request.html goes through that
+-- would let emails be enumerated). register.html goes through that
 -- function, not a direct insert, so the guard still applies to the app's own
 -- flow — a request straight against the REST API with this policy would skip it.
 drop trigger if exists check_lead_email_available on public.rep_leads;
