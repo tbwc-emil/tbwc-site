@@ -102,6 +102,7 @@
   // Login dropdown
   function setDrop(open) {
     drop.hidden = !open;
+    if (open) setMobile(false);
     if (open) { var el = form.querySelector('input'); if (el) el.focus(); }
   }
   dropToggle.addEventListener('click', function () { setDrop(drop.hidden); });
@@ -156,6 +157,7 @@
   function setMobile(open) {
     mobile.hidden = !open;
     burger.setAttribute('data-open', open ? '1' : '0');
+    if (open) drop.hidden = true;
   }
   burger.addEventListener('click', function () { setMobile(mobile.hidden); });
 

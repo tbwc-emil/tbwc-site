@@ -326,8 +326,10 @@ h1, h2, h3, h4 {
 
 @media (max-width: 880px) {
   .nav__links { display: none; }
-  .nav__cta-group .btn { display: none; }
+  .nav__inner { gap: 16px; }
   .nav__burger { display: inline-flex; }
+  .portal-drop { max-width: calc(100vw - 32px); }
+  .portal-drop__input { font-size: 16px; } /* < 16px makes iOS zoom on focus */
   .nav__mobile { display: flex; }
 }
 
