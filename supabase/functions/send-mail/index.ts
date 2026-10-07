@@ -98,6 +98,8 @@ serve(async (req) => {
     return json({ error: 'Invalid request body' }, 400);
   }
 
+  console.log(`[send-mail] type=${body.type} email=${body.email ?? notifyRecipient(req)} hasAttachment=${!!body.attachmentBase64}`);
+
   try {
     if (body.type === 'lead-notify') {
       const { subject, html } = leadNotifyEmail(body);
@@ -122,12 +124,14 @@ serve(async (req) => {
             contentType: body.attachmentContentType || 'application/pdf',
           }]
         : undefined;
-      await sendMail(body.email, subject, html, attachments);
+      const info = await sendMail(body.email, subject, html, attachments);
+      console.log(`[send-mail] document sent — accepted=${JSON.stringify(info.accepted)} rejected=${JSON.stringify(info.rejected)} response=${info.response}`);
     } else {
       return json({ error: 'Unknown type' }, 400);
     }
     return json({ success: true }, 200);
   } catch (err) {
+    console.error('[send-mail] failed:', err instanceof Error ? err.stack ?? err.message : err);
     return json({ error: err instanceof Error ? err.message : 'Send failed' }, 500);
   }
 });

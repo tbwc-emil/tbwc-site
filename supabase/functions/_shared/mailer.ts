@@ -61,8 +61,12 @@ export interface MailAttachment {
   contentType?: string;
 }
 
+/** Resolves with nodemailer's SMTP response (accepted/rejected/response code)
+ *  instead of void — "no error thrown" only means the SMTP server accepted
+ *  the message for relay, not that it reached the inbox, so callers that
+ *  need to debug a "never arrived" report should log this. */
 export function sendMail(to: string, subject: string, html: string, attachments?: MailAttachment[]) {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<{ accepted: string[]; rejected: string[]; response: string }>((resolve, reject) => {
     transport.sendMail(
       {
         from: `"TBWC Technology" <${SMTP_FROM}>`,
@@ -76,7 +80,7 @@ export function sendMail(to: string, subject: string, html: string, attachments?
           contentType: a.contentType,
         })),
       },
-      (err: Error | null) => (err ? reject(err) : resolve())
+      (err: Error | null, info: any) => (err ? reject(err) : resolve(info))
     );
   });
 }
