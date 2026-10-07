@@ -55,10 +55,27 @@ const transport = nodemailer.createTransport({
   requireTLS: true,
 });
 
-export function sendMail(to: string, subject: string, html: string) {
+export interface MailAttachment {
+  filename: string;
+  contentBase64: string;
+  contentType?: string;
+}
+
+export function sendMail(to: string, subject: string, html: string, attachments?: MailAttachment[]) {
   return new Promise<void>((resolve, reject) => {
     transport.sendMail(
-      { from: `"TBWC Technology" <${SMTP_FROM}>`, to, subject, html },
+      {
+        from: `"TBWC Technology" <${SMTP_FROM}>`,
+        to,
+        subject,
+        html,
+        attachments: attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.contentBase64,
+          encoding: 'base64' as const,
+          contentType: a.contentType,
+        })),
+      },
       (err: Error | null) => (err ? reject(err) : resolve())
     );
   });

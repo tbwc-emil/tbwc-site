@@ -77,6 +77,15 @@ function inviteEmail(f: { firstName: string; link: string }) {
   };
 }
 
+// Generic type, unlike the three templated ones above — the TBWC Worker
+// already has the order/invoice data and renders its own bodyHtml/PDF, this
+// fn just brands+sends it. Kept separate from leadNotifyEmail/etc. rather than
+// made the one true path, since those three are fire-and-forget with no
+// caller-supplied content to validate.
+function documentEmail(f: { subject: string; bodyHtml: string }) {
+  return { subject: f.subject, html: wrapEmail(f.subject, f.subject, f.bodyHtml) };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -101,6 +110,19 @@ serve(async (req) => {
       if (!body.email || !body.link) return json({ error: 'Missing email or link' }, 400);
       const { subject, html } = reverifyEmail(body);
       await sendMail(body.email, subject, html);
+    } else if (body.type === 'document') {
+      if (!body.email || !body.subject || !body.bodyHtml) {
+        return json({ error: 'Missing email, subject, or bodyHtml' }, 400);
+      }
+      const { subject, html } = documentEmail(body);
+      const attachments = body.attachmentBase64 && body.attachmentFilename
+        ? [{
+            filename: body.attachmentFilename,
+            contentBase64: body.attachmentBase64,
+            contentType: body.attachmentContentType || 'application/pdf',
+          }]
+        : undefined;
+      await sendMail(body.email, subject, html, attachments);
     } else {
       return json({ error: 'Unknown type' }, 400);
     }
