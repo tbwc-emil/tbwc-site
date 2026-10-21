@@ -57,8 +57,8 @@ function reverifyEmail(f: { firstName: string; link: string }) {
     `<p style="margin:28px 0 8px;font-size:13px;line-height:1.5;color:#7c7f89;">Or paste this link into your browser:</p>` +
     `<p style="margin:0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.5;word-break:break-all;color:#2f5bd6;">${esc(f.link)}</p>`;
   return {
-    subject: 'Re-verify your TBWC Rep Portal account',
-    html: wrapEmail('Your TBWC Rep Portal account needs re-verification.', 'Re-verify your account', body),
+    subject: 'Re-verify your TBWC Portal account',
+    html: wrapEmail('Your TBWC Portal account needs re-verification.', 'Re-verify your account', body),
   };
 }
 
@@ -72,8 +72,8 @@ function inviteEmail(f: { firstName: string; link: string }) {
     `<p style="margin:28px 0 8px;font-size:13px;line-height:1.5;color:#7c7f89;">Or paste this link into your browser:</p>` +
     `<p style="margin:0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.5;word-break:break-all;color:#2f5bd6;">${esc(f.link)}</p>`;
   return {
-    subject: "You're invited — finish your TBWC Rep Portal registration",
-    html: wrapEmail("You're invited to finish your TBWC Rep Portal registration.", "You're invited", body),
+    subject: "You're invited — finish your TBWC Portal registration",
+    html: wrapEmail("You're invited to finish your TBWC Portal registration.", "You're invited", body),
   };
 }
 

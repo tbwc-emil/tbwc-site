@@ -40,7 +40,7 @@ function verifyLeadEmail(f: { firstName: string; link: string }) {
     `<p style="margin:28px 0 8px;font-size:13px;line-height:1.5;color:#7c7f89;">Or paste this link into your browser:</p>` +
     `<p style="margin:0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.5;word-break:break-all;color:#2f5bd6;">${esc(f.link)}</p>`;
   return {
-    subject: 'Confirm your email — TBWC Rep Portal',
+    subject: 'Confirm your email — TBWC Portal',
     html: wrapEmail('Confirm your email to continue your TBWC rep application.', 'Confirm your email', body),
   };
 }

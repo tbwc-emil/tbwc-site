@@ -26,7 +26,7 @@ function LoginModal({ open, onClose, onSuccess }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Sign in to Rep Portal">
+      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Sign in to Portal">
         <button className="modal__close" onClick={onClose} aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -34,7 +34,7 @@ function LoginModal({ open, onClose, onSuccess }) {
         </button>
         <div>
           <div className="kicker" style={{ marginBottom: 12 }}>
-            <span className="num">/01</span> &nbsp; Rep Portal · v3.2
+            <span className="num">/01</span> &nbsp; Portal · v3.2
           </div>
           <h2 style={{ fontSize: 28, letterSpacing: '-0.022em', fontWeight: 500, lineHeight: 1.1 }}>
             Sign in to your<br />agency account.
@@ -83,12 +83,12 @@ function PortalPreview({ open, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="portal" role="dialog" aria-label="Rep Portal preview">
+    <div className="portal" role="dialog" aria-label="Portal preview">
       <div className="portal__head">
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <span className="brand">
             <span className="brand__mark">TBWC</span>
-            <span className="brand__sub">Rep Portal</span>
+            <span className="brand__sub">Portal</span>
           </span>
           <span style={{ fontFamily: 'var(--f-mono)', fontSize: 11, color: 'var(--ink-3)', padding: '4px 10px', border: 'var(--rule-w) solid var(--rule)', borderRadius: 999 }}>
             DEMO · Pacific Tech Reps

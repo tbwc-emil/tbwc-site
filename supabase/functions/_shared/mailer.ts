@@ -31,7 +31,7 @@ export function wrapEmail(preheader: string, title: string, bodyHtml: string): s
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#fbfaf7;border:1px solid #e2e2e6;border-radius:10px;overflow:hidden;font-family:'Geist',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
 <tr><td style="padding:28px 32px 20px;border-bottom:1px solid #e2e2e6;">
 <span style="font-size:20px;font-weight:700;letter-spacing:0.5px;color:#1b1d23;">TBWC</span>
-<span style="font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:11px;color:#7c7f89;text-transform:uppercase;letter-spacing:1.5px;margin-left:8px;">Rep Portal</span>
+<span style="font-family:'Geist Mono',ui-monospace,SFMono-Regular,monospace;font-size:11px;color:#7c7f89;text-transform:uppercase;letter-spacing:1.5px;margin-left:8px;">Portal</span>
 </td></tr>
 <tr><td style="padding:32px;">
 <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:600;color:#1b1d23;">${esc(title)}</h1>
