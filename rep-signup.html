@@ -260,7 +260,7 @@
                 'Account created — sign in from the site header.';
               return;
             }
-            window.location.href = signInRes.isAdmin ? 'admin.html' : 'portal.html';
+            window.location.href = '/portal/';
           });
         }, function (err) {
           submitBtn.disabled = false;
