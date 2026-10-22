@@ -27,7 +27,7 @@
     var res = await sb.auth.signInWithPassword({ email: email, password: password });
     if (res.error) return { error: res.error };
 
-    var userRes = await sb.from('users').select('approved,is_admin').eq('id', res.data.user.id).single();
+    var userRes = await sb.from('users').select('approved').eq('id', res.data.user.id).single();
     if (userRes.error || !userRes.data) {
       await sb.auth.signOut();
       return { error: { message: 'No user profile found for this account. Contact support.' } };
@@ -36,7 +36,10 @@
       await sb.auth.signOut();
       return { error: { message: 'Your registration is still pending approval.' } };
     }
-    return { data: res.data, isAdmin: !!userRes.data.is_admin };
+    // No isAdmin here any more: admin rights are role grants in the portal's
+    // own API (public.role_permission), not a column on this row, and the
+    // legacy admin.html that used to branch on it is retired.
+    return { data: res.data };
   }
 
   // Verifies a Cloudflare Turnstile token server-side (verify-turnstile edge function)

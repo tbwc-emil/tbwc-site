@@ -43,10 +43,11 @@ serve(async (req) => {
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  // Matches users_delete_admin's RLS predicate (public.is_admin()) — this function
-  // bypasses RLS via the service role, so it has to re-check that itself.
+  // Deleting a user is the Users write grant (user:write — the same permission
+  // the portal's DELETE /api/users/:id enforces). This function bypasses RLS
+  // via the service role, so it has to check that itself.
   const caller = await getCaller(req, sb);
-  if (!caller.ok || !caller.isAdmin) return json({ error: 'Admins only' }, 403);
+  if (!caller.ok || !caller.has('user:write')) return json({ error: 'Not authorized' }, 403);
 
   const { error } = await sb.auth.admin.deleteUser(id);
   if (error) return json({ error: error.message || 'Delete failed — try again.' }, 500);

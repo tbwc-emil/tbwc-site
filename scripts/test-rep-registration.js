@@ -99,7 +99,7 @@ async function testDuplicateGuards(db) {
   // This guard is now enforced by submit-rep-lead (service role), not a DB
   // trigger — a raw REST insert like the calls above would no longer catch it,
   // since rep_leads_insert_public has no way to check public.users itself.
-  const repRow = await db.query("select email from public.users where type = 'rep' limit 1");
+  const repRow = await db.query("select u.email from public.users u join public.role r on r.role_id = u.role_id where r.code = 'rep' limit 1");
   if (repRow.rowCount) {
     const repEmail = repRow.rows[0].email;
     const dupRep = await fn('submit-rep-lead', { firstName: 'Existing', lastName: 'Rep', email: repEmail });
@@ -144,7 +144,7 @@ async function testEdgeFunctions(db) {
   const missingSignupFields = await fn('rep-signup', { email: 'test@example.com' });
   assert(missingSignupFields.status === 400, 'rep-signup rejects a request missing password');
 
-  const repRow = await db.query("select email from public.users where type = 'rep' limit 1");
+  const repRow = await db.query("select u.email from public.users u join public.role r on r.role_id = u.role_id where r.code = 'rep' limit 1");
   if (repRow.rowCount) {
     const alreadyRegistered = await fn('rep-signup', { email: repRow.rows[0].email, password: 'irrelevant-wrong-password' });
     assert(

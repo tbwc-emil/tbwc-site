@@ -1,3 +1,16 @@
+-- FROZEN 2026-10-22 — DO NOT RUN. Kept for history only.
+--
+-- This was the original rep-portal bootstrap, from before the portal moved to
+-- the React app at /portal/ and its API Worker. The authoritative schema now
+-- lives in the Synergy repo: TBWC/api/migrations/*.sql, applied in order.
+--
+-- Re-running this file would resurrect objects that have since been dropped on
+-- purpose — users.is_admin, users.type, the is_admin()/is_approved_rep()
+-- helpers and the public.users + rep-docs policies built on them. Permissions
+-- are role grants (public.role_permission) checked in the Worker now, not
+-- columns on a user row. scripts/apply-schema.js refuses to run for that
+-- reason.
+
 -- Rep Portal schema. Idempotent — safe to re-run.
 -- Applied with: npm run db:schema
 

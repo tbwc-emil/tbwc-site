@@ -43,11 +43,12 @@ serve(async (req) => {
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  // Matches rep_leads_delete_admin's RLS predicate (can_approve_rep_leads() —
-  // is_admin does NOT imply this) — this function bypasses RLS via the service
-  // role, so it has to re-check that itself.
+  // Deleting a portal access request is the Rep Approvals grant
+  // (repApproval:write — Settings > Roles > Utilities), the same permission the
+  // portal's own Rep Approvals page is gated on. This function bypasses RLS via
+  // the service role, so it has to check that itself.
   const caller = await getCaller(req, sb);
-  if (!caller.ok || !caller.canApproveRepLeads) return json({ error: 'Not authorized' }, 403);
+  if (!caller.ok || !caller.has('repApproval:write')) return json({ error: 'Not authorized' }, 403);
 
   const { data: lead, error: fetchError } = await sb.from('rep_leads').select('email').eq('id', id).maybeSingle();
   if (fetchError) return json({ error: fetchError.message || 'Delete failed — try again.' }, 500);
