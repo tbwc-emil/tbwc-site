@@ -13,7 +13,7 @@
 // Deploy: supabase functions deploy submit-rep-lead
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { esc, wrapEmail, sendMail, smtpConfigured } from '../_shared/mailer.ts';
+import { esc, wrapEmail, sendMail, mailerConfigured } from '../_shared/mailer.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -48,7 +48,7 @@ function verifyLeadEmail(f: { firstName: string; link: string }) {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  if (!smtpConfigured()) return json({ error: 'Server misconfigured' }, 500);
+  if (!mailerConfigured()) return json({ error: 'Server misconfigured' }, 500);
 
   let body: any;
   try {
