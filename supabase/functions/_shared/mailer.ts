@@ -39,8 +39,8 @@ export function esc(s: unknown): string {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 }
 
-// Same look as emails/confirm-signup.html (kept there as the original reference —
-// this is now the version that actually sends).
+// The standard branded shell for app-generated mail: TBWC/Portal header bar, a
+// heading, the caller’s body, and a footer rule.
 export function wrapEmail(preheader: string, title: string, bodyHtml: string): string {
   return `<!doctype html>
 <html lang="en">
