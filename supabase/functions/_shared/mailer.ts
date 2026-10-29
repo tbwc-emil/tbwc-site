@@ -7,7 +7,7 @@
 // Brevo's HTTP API (POST /v3/smtp/email), not SMTP: this runs on Deno Deploy, where
 // one fetch beats a TCP+STARTTLS handshake per send, and the API answers with a
 // messageId that ties a send to Brevo's own delivery/bounce log — the only way to
-// answer a "never arrived" report. Replaced M365 SMTP 2026-10-29.
+// answer a "never arrived" report. Replaced the previous SMTP transport 2026-10-29.
 //
 // Secrets (shared across functions):
 //   supabase secrets set BREVO_API_KEY=xkeysib-...
@@ -17,21 +17,17 @@
 // Senders) AND on a domain Brevo has authenticated, which are two separate things.
 // A validated address on an unauthenticated domain still sends — but Brevo rewrites
 // the From to <local>@<accountId>.brevosend.com, verified live 2026-10-29: a send
-// as jen@tbwcinc.com went out as jen@12618087.brevosend.com. So it fails the same
-// way M365 did, quietly, just to a different address. Authenticating the domain
-// means DNS records (Brevo DKIM + brevo-code TXT) — nothing here can stand in for
-// them. An SPF include alone does NOT authenticate a domain to Brevo.
-//
-// The retired SMTP_USER/SMTP_PASS secrets are deliberately left in place as rollback.
+// as jen@tbwcinc.com went out as jen@12618087.brevosend.com. Authenticating the
+// domain means DNS records (Brevo DKIM + brevo-code TXT) — nothing here can stand
+// in for them. An SPF include alone does NOT authenticate a domain to Brevo.
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
 const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
-// Default envelope sender, overridable by secret so the From address can be
-// repointed with `supabase secrets set` alone — no redeploy — while Brevo sender
-// validation is still being sorted out. Falls back to the old SMTP_FROM value.
-const FROM_EMAIL =
-  Deno.env.get('MAIL_FROM_EMAIL') || Deno.env.get('SMTP_FROM') || Deno.env.get('SMTP_USER');
+// Envelope sender. Both parts are overridable by secret so the From can be
+// repointed with `supabase secrets set` alone, no redeploy, while Brevo sender
+// validation is being sorted out.
+const FROM_EMAIL = Deno.env.get('MAIL_FROM_EMAIL');
 const FROM_NAME = Deno.env.get('MAIL_FROM_NAME') || 'TBWC Technology';
 
 export function mailerConfigured(): boolean {
@@ -121,8 +117,8 @@ export function parseAddress(raw: string): Address {
 
 /**
  * Plain-text alternative for the HTML body. A message with no text/plain part
- * scores worse with spam filters, and nodemailer was not supplying one either, so
- * every email this app has ever sent has been HTML-only. Not a renderer — it drops
+ * scores worse with spam filters, and the transport this replaced did not supply
+ * one either, so every email this app has ever sent has been HTML-only. Not a renderer — it drops
  * the head, turns block boundaries into newlines and unescapes the handful of
  * entities esc() produces, which is all these templates contain.
  */
@@ -155,7 +151,7 @@ function splitList(raw: string): string[] {
 }
 
 /**
- * Resolves with Brevo's messageId in `response`, keeping the old nodemailer-shaped
+ * Resolves with Brevo's messageId in `response`, keeping the
  * {accepted, rejected, response} so callers' logging does not change. A resolved
  * promise means Brevo accepted the message for delivery, NOT that it reached the
  * inbox — feed `response` into Brevo's transactional log to settle that.
@@ -164,12 +160,11 @@ function splitList(raw: string): string[] {
  * per-recipient rejections the way SMTP did.
  *
  * `from` overrides the default sender — e.g. documentEmail()'s "TBWC Accounting",
- * matching what QuickBooks Desktop itself sends invoices/orders as. Brevo has no
- * equivalent of Exchange's Send-As permission (which is what blocked this under
- * M365: 554 5.2.252 SendAsDenied), so any validated address may be used here — but
- * if its domain is not authenticated in Brevo, Brevo rewrites the From to its own
- * brevosend.com subdomain rather than refusing the send. Check the delivery log,
- * not just the absence of an exception.
+ * matching what QuickBooks Desktop itself sends invoices/orders as. Brevo's only
+ * requirement is that the address is validated in its Senders list; but if the
+ * address's domain is not authenticated in Brevo, Brevo rewrites the From to its
+ * own brevosend.com subdomain rather than refusing the send. So check the delivery
+ * log, not just the absence of an exception.
  */
 export async function sendMail(
   to: string,

@@ -91,17 +91,13 @@ function inviteEmail(f: { firstName: string; link: string }) {
 
 // "From" for every order/invoice/AR-notice email, matching what QuickBooks
 // Desktop itself sends these as. Overridable by secret so the address can be
-// repointed without a redeploy while Brevo sender validation is sorted out.
+// repointed without a redeploy.
 //
-// Under M365 this was pinned to noreply@tbwcinc.com: SMTP_USER had no Exchange
-// Send-As permission on accounting@tbwcinc.com, and a live attempt on 2026-10-27
-// bounced every document email with 554 5.2.252 SendAsDenied. Brevo has no
-// Send-As concept, so that constraint is gone — but Brevo's own rule replaces it:
-// the address must be validated under Senders, and its domain authenticated, or
-// Brevo rewrites the From to <local>@<accountId>.brevosend.com and sends anyway.
-// Seen live 2026-10-29: jen@tbwcinc.com went out as jen@12618087.brevosend.com,
-// which Yahoo then filtered. Until GoDaddy carries Brevo’s DKIM + brevo-code
-// records, no value here produces a From that customers should see.
+// It must be an address validated in Brevo's Senders list, and its domain must be
+// authenticated there, or Brevo rewrites the From to
+// <local>@<accountId>.brevosend.com and sends anyway. Seen live 2026-10-29:
+// jen@tbwcinc.com went out as jen@12618087.brevosend.com. Until the DNS records
+// exist, no value here produces a From that customers should see.
 const DOCUMENT_FROM = Deno.env.get('DOCUMENT_FROM') || '"TBWC Accounting" <noreply@tbwcinc.com>';
 
 function documentEmail(f: { subject: string; bodyHtml: string }) {
