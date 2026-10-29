@@ -1,19 +1,20 @@
-// Sends the two rep-registration transactional emails via Microsoft 365 SMTP
-// (creds verified locally first with scripts/smtp-test.js). Deploy:
+// Sends the rep-registration and document transactional emails through Brevo's
+// HTTP API (see _shared/mailer.ts). Deploy:
 //   supabase functions deploy send-mail
 // Secrets:
-//   supabase secrets set SMTP_USER=you@tbwcinc.com SMTP_PASS=... SMTP_FROM=you@tbwcinc.com
-//   supabase secrets set ADMIN_NOTIFY_EMAIL=info@tbwcinc.com   (optional override; default below)
-//
+//   supabase secrets set BREVO_API_KEY=xkeysib-...
+//   supabase secrets set MAIL_FROM_EMAIL=... MAIL_FROM_NAME=...   (optional sender)
+//   supabase secrets set DOCUMENT_FROM='"TBWC Accounting" <...>'  (optional)
+//   supabase secrets set ADMIN_NOTIFY_EMAIL=info@tbwcinc.com      (optional override; default below)
 // One Supabase project backs both local dev and the live site, so the
 // lead-notify recipient is picked from the caller's Origin instead of a
 // per-environment secret: localhost/127.0.0.1 -> DEV_NOTIFY_EMAIL, anything
 // else -> ADMIN_NOTIFY_EMAIL. Keeps test inquiries out of the real inbox.
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { esc, wrapEmail, sendMail, smtpConfigured } from '../_shared/mailer.ts';
+import { esc, wrapEmail, bareHtmlDocument, sendMail, mailerConfigured } from '../_shared/mailer.ts';
 
 const ADMIN_NOTIFY_EMAIL = Deno.env.get('ADMIN_NOTIFY_EMAIL') || 'info@tbwcinc.com';
-const DEV_NOTIFY_EMAIL = Deno.env.get('DEV_NOTIFY_EMAIL') || 'emil@tbwcinc.com';
+const DEV_NOTIFY_EMAIL = Deno.env.get('DEV_NOTIFY_EMAIL') || 'emilguirguis@yahoo.com';
 
 function notifyRecipient(req: Request): string {
   const origin = req.headers.get('origin') || '';
@@ -78,18 +79,39 @@ function inviteEmail(f: { firstName: string; link: string }) {
 }
 
 // Generic type, unlike the three templated ones above — the TBWC Worker
-// already has the order/invoice data and renders its own bodyHtml/PDF, this
-// fn just brands+sends it. Kept separate from leadNotifyEmail/etc. rather than
-// made the one true path, since those three are fire-and-forget with no
-// caller-supplied content to validate.
+// already has the order/invoice data and renders its own fully-branded
+// bodyHtml/PDF (a self-contained card matching QuickBooks Desktop's own
+// "email this invoice" look — see Synergy's pdf/documentEmail.ts), this fn
+// just sends it. bareHtmlDocument, not wrapEmail: the Worker's card already
+// carries its own header/footer bars, so wrapEmail's "TBWC / PORTAL" shell
+// and repeated-subject heading would just nest one branded card inside
+// another. Kept separate from leadNotifyEmail/etc. rather than made the one
+// true path, since those three are fire-and-forget with no caller-supplied
+// content to validate.
+
+// "From" for every order/invoice/AR-notice email, matching what QuickBooks
+// Desktop itself sends these as. Overridable by secret so the address can be
+// repointed without a redeploy while Brevo sender validation is sorted out.
+//
+// Under M365 this was pinned to noreply@tbwcinc.com: SMTP_USER had no Exchange
+// Send-As permission on accounting@tbwcinc.com, and a live attempt on 2026-10-27
+// bounced every document email with 554 5.2.252 SendAsDenied. Brevo has no
+// Send-As concept, so that constraint is gone — but Brevo's own rule replaces it:
+// the address must be validated under Senders, and its domain authenticated, or
+// Brevo rewrites the From to <local>@<accountId>.brevosend.com and sends anyway.
+// Seen live 2026-10-29: jen@tbwcinc.com went out as jen@12618087.brevosend.com,
+// which Yahoo then filtered. Until GoDaddy carries Brevo’s DKIM + brevo-code
+// records, no value here produces a From that customers should see.
+const DOCUMENT_FROM = Deno.env.get('DOCUMENT_FROM') || '"TBWC Accounting" <noreply@tbwcinc.com>';
+
 function documentEmail(f: { subject: string; bodyHtml: string }) {
-  return { subject: f.subject, html: wrapEmail(f.subject, f.subject, f.bodyHtml) };
+  return { subject: f.subject, html: bareHtmlDocument(f.bodyHtml) };
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  if (!smtpConfigured()) return json({ error: 'Server misconfigured' }, 500);
+  if (!mailerConfigured()) return json({ error: 'Server misconfigured' }, 500);
 
   let body: any;
   try {
@@ -124,7 +146,7 @@ serve(async (req) => {
             contentType: body.attachmentContentType || 'application/pdf',
           }]
         : undefined;
-      const info = await sendMail(body.email, subject, html, attachments);
+      const info = await sendMail(body.email, subject, html, attachments, DOCUMENT_FROM, body.cc || undefined, body.replyTo || undefined);
       console.log(`[send-mail] document sent — accepted=${JSON.stringify(info.accepted)} rejected=${JSON.stringify(info.rejected)} response=${info.response}`);
     } else {
       return json({ error: 'Unknown type' }, 400);

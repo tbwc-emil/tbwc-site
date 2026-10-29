@@ -1,16 +1,41 @@
-// Shared M365 SMTP transport + branded email wrapper, used by every function that
-// sends a rep-portal email (send-mail, rep-signup) so all app mail — invites, lead
-// notifications, signup confirmation — goes out through one codepath instead of
-// partly through Supabase's own built-in auth mailer.
-// Secrets (shared across functions): supabase secrets set SMTP_USER=... SMTP_PASS=... SMTP_FROM=...
-import nodemailer from 'npm:nodemailer@^9';
+// Shared Brevo transport + branded email wrapper, used by every function that
+// sends a rep-portal email (send-mail, submit-rep-lead) so all app mail — invites,
+// reverification, lead notifications, order/invoice PDFs, AR collection notices —
+// goes out through one codepath instead of partly through Supabase's own built-in
+// auth mailer.
+//
+// Brevo's HTTP API (POST /v3/smtp/email), not SMTP: this runs on Deno Deploy, where
+// one fetch beats a TCP+STARTTLS handshake per send, and the API answers with a
+// messageId that ties a send to Brevo's own delivery/bounce log — the only way to
+// answer a "never arrived" report. Replaced M365 SMTP 2026-10-29.
+//
+// Secrets (shared across functions):
+//   supabase secrets set BREVO_API_KEY=xkeysib-...
+//   supabase secrets set MAIL_FROM_EMAIL=... MAIL_FROM_NAME=...    (optional)
+//
+// The sender address MUST be one Brevo has validated (a confirmed entry under
+// Senders) AND on a domain Brevo has authenticated, which are two separate things.
+// A validated address on an unauthenticated domain still sends — but Brevo rewrites
+// the From to <local>@<accountId>.brevosend.com, verified live 2026-10-29: a send
+// as jen@tbwcinc.com went out as jen@12618087.brevosend.com. So it fails the same
+// way M365 did, quietly, just to a different address. Authenticating the domain
+// means DNS records (Brevo DKIM + brevo-code TXT) — nothing here can stand in for
+// them. An SPF include alone does NOT authenticate a domain to Brevo.
+//
+// The retired SMTP_USER/SMTP_PASS secrets are deliberately left in place as rollback.
 
-const SMTP_USER = Deno.env.get('SMTP_USER');
-const SMTP_PASS = Deno.env.get('SMTP_PASS');
-const SMTP_FROM = Deno.env.get('SMTP_FROM') || SMTP_USER;
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
+const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
-export function smtpConfigured(): boolean {
-  return !!(SMTP_USER && SMTP_PASS);
+// Default envelope sender, overridable by secret so the From address can be
+// repointed with `supabase secrets set` alone — no redeploy — while Brevo sender
+// validation is still being sorted out. Falls back to the old SMTP_FROM value.
+const FROM_EMAIL =
+  Deno.env.get('MAIL_FROM_EMAIL') || Deno.env.get('SMTP_FROM') || Deno.env.get('SMTP_USER');
+const FROM_NAME = Deno.env.get('MAIL_FROM_NAME') || 'TBWC Technology';
+
+export function mailerConfigured(): boolean {
+  return !!(BREVO_API_KEY && FROM_EMAIL);
 }
 
 export function esc(s: unknown): string {
@@ -47,13 +72,29 @@ ${bodyHtml}
 </html>`;
 }
 
-const transport = nodemailer.createTransport({
-  host: 'smtp.office365.com',
-  port: 587,
-  secure: false, // STARTTLS on 587, not implicit TLS
-  auth: { user: SMTP_USER, pass: SMTP_PASS },
-  requireTLS: true,
-});
+/**
+ * Bare centered shell for an email whose HTML is already fully branded by
+ * its caller (the TBWC Worker's own order/invoice/AR-notice card — see
+ * Synergy's pdf/documentEmail.ts) — just the cream background + a
+ * max-width centering table, with none of wrapEmail()'s own "TBWC / PORTAL"
+ * header bar, repeated-subject heading, or footer. Using wrapEmail() for
+ * those would nest one branded card inside another.
+ */
+export function bareHtmlDocument(bodyHtml: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light only"></head>
+<body style="margin:0;padding:24px 16px;background:#f2f1ee;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f1ee;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+<tr><td>${bodyHtml}</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
 
 export interface MailAttachment {
   filename: string;
@@ -61,26 +102,136 @@ export interface MailAttachment {
   contentType?: string;
 }
 
-/** Resolves with nodemailer's SMTP response (accepted/rejected/response code)
- *  instead of void — "no error thrown" only means the SMTP server accepted
- *  the message for relay, not that it reached the inbox, so callers that
- *  need to debug a "never arrived" report should log this. */
-export function sendMail(to: string, subject: string, html: string, attachments?: MailAttachment[]) {
-  return new Promise<{ accepted: string[]; rejected: string[]; response: string }>((resolve, reject) => {
-    transport.sendMail(
-      {
-        from: `"TBWC Technology" <${SMTP_FROM}>`,
-        to,
-        subject,
-        html,
-        attachments: attachments?.map((a) => ({
-          filename: a.filename,
-          content: a.contentBase64,
-          encoding: 'base64' as const,
-          contentType: a.contentType,
-        })),
-      },
-      (err: Error | null, info: any) => (err ? reject(err) : resolve(info))
-    );
+interface Address {
+  name?: string;
+  email: string;
+}
+
+/**
+ * Splits `"Display Name" <user@host>` into Brevo's separate {name, email} shape;
+ * a bare address yields just {email}. SMTP took one combined header string, so
+ * this keeps every existing caller's `from`/`replyTo` argument working unchanged.
+ */
+export function parseAddress(raw: string): Address {
+  const m = raw.match(/^\s*(.*?)\s*<\s*([^<>\s]+)\s*>\s*$/);
+  if (!m) return { email: raw.trim() };
+  const name = m[1].replace(/^"(.*)"$/, '$1').trim();
+  return name ? { name, email: m[2] } : { email: m[2] };
+}
+
+/**
+ * Plain-text alternative for the HTML body. A message with no text/plain part
+ * scores worse with spam filters, and nodemailer was not supplying one either, so
+ * every email this app has ever sent has been HTML-only. Not a renderer — it drops
+ * the head, turns block boundaries into newlines and unescapes the handful of
+ * entities esc() produces, which is all these templates contain.
+ */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<\/t[dh]>/gi, ' ')
+    .replace(/<\/(p|div|tr|h[1-6]|table)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&mdash;/g, '—')
+    .replace(/&copy;/g, '©')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** One address, or a comma/semicolon-separated list, to Brevo's array form. */
+function splitList(raw: string): string[] {
+  return raw
+    .split(/[,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Resolves with Brevo's messageId in `response`, keeping the old nodemailer-shaped
+ * {accepted, rejected, response} so callers' logging does not change. A resolved
+ * promise means Brevo accepted the message for delivery, NOT that it reached the
+ * inbox — feed `response` into Brevo's transactional log to settle that.
+ *
+ * `rejected` is always empty: Brevo fails the whole call rather than reporting
+ * per-recipient rejections the way SMTP did.
+ *
+ * `from` overrides the default sender — e.g. documentEmail()'s "TBWC Accounting",
+ * matching what QuickBooks Desktop itself sends invoices/orders as. Brevo has no
+ * equivalent of Exchange's Send-As permission (which is what blocked this under
+ * M365: 554 5.2.252 SendAsDenied), so any validated address may be used here — but
+ * if its domain is not authenticated in Brevo, Brevo rewrites the From to its own
+ * brevosend.com subdomain rather than refusing the send. Check the delivery log,
+ * not just the absence of an exception.
+ */
+export async function sendMail(
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: MailAttachment[],
+  from?: string,
+  cc?: string,
+  replyTo?: string
+): Promise<{ accepted: string[]; rejected: string[]; response: string }> {
+  if (!BREVO_API_KEY || !FROM_EMAIL) throw new Error('BREVO_API_KEY or sender address not configured');
+
+  const recipients = splitList(to);
+  if (recipients.length === 0) throw new Error('sendMail: no recipient');
+
+  const payload: Record<string, unknown> = {
+    sender: from ? parseAddress(from) : { name: FROM_NAME, email: FROM_EMAIL },
+    to: recipients.map((email) => ({ email })),
+    subject,
+    htmlContent: html,
+    textContent: htmlToText(html),
+  };
+
+  const ccList = splitList(cc ?? '');
+  if (ccList.length > 0) payload.cc = ccList.map((email) => ({ email }));
+  if (replyTo) payload.replyTo = parseAddress(replyTo);
+
+  if (attachments && attachments.length > 0) {
+    // Brevo takes {name, content} only — there is no contentType field. It infers
+    // the MIME type from the filename extension and 400s the entire send for an
+    // extension outside its allowlist, so `filename` must keep its real extension.
+    // Callers screen the file first; see Synergy's fileEmail.ts.
+    payload.attachment = attachments.map((a) => ({ name: a.filename, content: a.contentBase64 }));
+  }
+
+  const res = await fetch(BREVO_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
+
+  const text = await res.text();
+  if (!res.ok) {
+    // Brevo answers {code, message}; both matter. The ones to expect are
+    // sender_not_valid (From not validated in Brevo) and invalid_parameter
+    // (attachment extension or size).
+    throw new Error(`Brevo send failed (${res.status}): ${text || res.statusText}`);
+  }
+
+  let messageId = '';
+  try {
+    messageId = (JSON.parse(text) as { messageId?: string }).messageId ?? '';
+  } catch {
+    // 2xx with an empty or non-JSON body — nothing to pull out, not an error.
+  }
+  return {
+    accepted: recipients,
+    rejected: [],
+    response: messageId ? `brevo messageId=${messageId}` : `brevo ${res.status}`,
+  };
 }
