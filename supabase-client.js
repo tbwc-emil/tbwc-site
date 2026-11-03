@@ -21,20 +21,39 @@
     return new URL(page, baseUrl).href;
   }
 
+  // The portal's API (TBWC Worker) — same base as contact-form.js.
+  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? 'http://localhost:8788/api'
+    : 'https://tbwc-api-production.emilguirguis.workers.dev/api';
+
   // Sign in, then confirm the user profile exists and is approved.
   // Rejects (and signs back out) if not — approval gate lives here, not just at signup.
+  // The profile check goes through the portal API's /auth/me (which answers
+  // 403 for a missing or unapproved profile), not a direct read of the users
+  // table — the database holds no access rules of its own.
   async function signIn(email, password) {
     var res = await sb.auth.signInWithPassword({ email: email, password: password });
     if (res.error) return { error: res.error };
 
-    var userRes = await sb.from('users').select('approved').eq('id', res.data.user.id).single();
-    if (userRes.error || !userRes.data) {
+    var me;
+    try {
+      me = await fetch(API_BASE + '/auth/me', {
+        headers: { Authorization: 'Bearer ' + res.data.session.access_token },
+      });
+    } catch (e) {
       await sb.auth.signOut();
-      return { error: { message: 'No user profile found for this account. Contact support.' } };
+      return { error: { message: 'Could not reach the portal — please try again.' } };
     }
-    if (!userRes.data.approved) {
+    if (!me.ok) {
+      var body = await me.json().catch(function () { return {}; });
       await sb.auth.signOut();
-      return { error: { message: 'Your registration is still pending approval.' } };
+      if (body.message === 'Account pending approval') {
+        return { error: { message: 'Your registration is still pending approval.' } };
+      }
+      if (body.message === 'No user profile found') {
+        return { error: { message: 'No user profile found for this account. Contact support.' } };
+      }
+      return { error: { message: body.message || 'Sign-in failed — please try again.' } };
     }
     // No isAdmin here any more: admin rights are role grants in the portal's
     // own API (public.role_permission), not a column on this row, and the
