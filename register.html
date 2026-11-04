@@ -136,21 +136,27 @@
         var submitLabel = submitBtn.textContent;
         submitBtn.textContent = 'Submitting…';
 
-        window.TBWCAuth.verifyTurnstile(turnstileToken).then(function (res) {
-          if (res.error) throw res.error;
-          return window.TBWCAuth.invokeFn('submit-rep-lead', {
-            firstName: f('firstName'),
-            lastName: f('lastName'),
-            email: f('email'),
-            phone: f('phone'),
-            about: f('pleaseShare'),
-            redirectTo: window.TBWCAuth.linkUrl('register.html')
-          });
+        if (!turnstileToken) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitLabel;
+          showMsg('Please complete the verification challenge.');
+          return;
+        }
+
+        // The portal API verifies the Turnstile token as part of this same submit.
+        window.TBWCAuth.submitLead({
+          firstName: f('firstName'),
+          lastName: f('lastName'),
+          email: f('email'),
+          phone: f('phone'),
+          about: f('pleaseShare'),
+          redirectTo: window.TBWCAuth.linkUrl('register.html'),
+          turnstileToken: turnstileToken
         }).then(function (res) {
           if (res.error) throw res.error;
-          // The admin isn't notified yet at this point — submit-rep-lead only mails
-          // the applicant a verify-your-email link; verify-lead-email notifies the
-          // admin once they've actually clicked it.
+          // The admin isn't notified yet at this point — the API only mails the
+          // applicant a verify-your-email link; the admin is notified once they've
+          // actually clicked it.
           submitBtn.disabled = false;
           submitBtn.textContent = submitLabel;
           form.style.display = 'none';

@@ -61,44 +61,41 @@
     return { data: res.data };
   }
 
-  // Verifies a Cloudflare Turnstile token server-side (verify-turnstile edge function)
-  // before letting the caller proceed with a public write — a client-side-only check
-  // would be trivial for a bot to skip. Shared by the rep-inquiry form and (formerly)
-  // signUp(); rep-signup.html doesn't call this — the emailed invite token is its gate.
-  async function verifyTurnstile(token) {
-    if (!token) return { error: { message: 'Please complete the verification challenge.' } };
-    var res = await sb.functions.invoke('verify-turnstile', { body: { token: token } });
-    if (res.error || !res.data || !res.data.success) {
-      return { error: { message: 'Verification failed — please try again.' } };
+  // The rep-application flow (inquiry, invite lookup, signup) runs in the portal
+  // API's public routes (/api/public/rep/*, no login) — the Supabase edge
+  // functions it used to call are retired. Returns { data } or
+  // { error: { message, code } } with the API's own message, so callers can show
+  // it as-is. The Turnstile check is part of the inquiry submit itself now.
+  async function publicApi(path, body) {
+    var res;
+    try {
+      res = await fetch(API_BASE + '/public/rep' + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      return { error: { message: 'Could not reach the portal — please try again.' } };
     }
-    return { data: true };
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      return { error: { message: data.error || data.message || 'Something went wrong — please try again.', code: data.code } };
+    }
+    return { data: data };
   }
 
-  // Calls an edge function and, on failure, extracts the real {error, code} JSON
-  // body — sb.functions.invoke() only gives a generic "non-2xx status" error by
-  // default, with the actual body sitting unread on error.context. Business logic
-  // that used to live in DB triggers/functions (auto-approve on email confirm,
-  // dup-lead guard, etc.) now runs in these functions instead, so callers need the
-  // real message back the way they'd have gotten one from Postgres before.
-  async function invokeFn(name, body) {
-    var res = await sb.functions.invoke(name, { body: body });
-    if (res.error) {
-      var message = 'Something went wrong — please try again.';
-      var code;
-      if (res.error.context && typeof res.error.context.json === 'function') {
-        try {
-          var errBody = await res.error.context.json();
-          if (errBody && errBody.error) message = errBody.error;
-          if (errBody && errBody.code) code = errBody.code;
-        } catch (e) { /* non-JSON error body — fall back to generic message */ }
-      }
-      return { error: { message: message, code: code } };
-    }
-    return { data: res.data };
+  // Rep inquiry (register.html): turnstileToken rides along and is verified server-side.
+  function submitLead(fields) {
+    return publicApi('/leads', fields);
+  }
+
+  // Invite prefill (rep-signup.html).
+  function getInvite(token) {
+    return publicApi('/invite', { token: token });
   }
 
   // fields: { email, password, firstName, lastName, agencyName, url, title, workPhone, ext, mobile, addr1, addr2, city, state, postal, about, inviteToken }
-  // Goes through the rep-signup edge function (service role + admin.createUser)
+  // Goes through the portal API's /public/rep/signup (service role + admin create user)
   // instead of sb.auth.signUp() — creates an already-confirmed account directly,
   // no confirmation email at this step. The applicant already proved they control
   // the address back at the inquiry stage (verify-lead-email); this is just the
@@ -106,10 +103,10 @@
   // The users profile row is created in the same call — no client insert needed.
   // Caller should sign in right after a successful result (see signIn above) —
   // this only creates the account, it doesn't establish a session.
-  // Only reachable today via an emailed invite link (rep-signup.html), so there's no
-  // separate Turnstile check here — the unguessable invite token is the gate.
+  // Only reachable via an emailed invite link (rep-signup.html) — the API requires
+  // a valid approved invite whose email matches, so the invite token is the gate.
   function signUp(fields) {
-    return invokeFn('rep-signup', {
+    return publicApi('/signup', {
       email: fields.email,
       password: fields.password,
       firstName: fields.firstName || null,
@@ -191,8 +188,8 @@
     sb: sb,
     signIn: signIn,
     signUp: signUp,
-    verifyTurnstile: verifyTurnstile,
-    invokeFn: invokeFn,
+    submitLead: submitLead,
+    getInvite: getInvite,
     linkUrl: linkUrl,
     sendPasswordReset: sendPasswordReset,
     updatePassword: updatePassword,

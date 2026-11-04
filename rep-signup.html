@@ -278,7 +278,7 @@
         return;
       }
 
-      window.TBWCAuth.sb.functions.invoke('get-lead', { body: { token: inviteToken } }).then(function (res) {
+      window.TBWCAuth.getInvite(inviteToken).then(function (res) {
         if (res.error || !res.data) {
           showInvalid('This invite link is invalid or has expired.');
           return;
