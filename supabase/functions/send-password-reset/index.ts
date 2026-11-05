@@ -2,12 +2,16 @@
 // instead of Supabase's built-in auth mailer, which only delivers to the
 // project's own team members and was silently dropping every rep's reset email.
 //
-// admin.generateLink({type: 'recovery'}) mints the same one-time
-// /auth/v1/verify link Supabase's own template would have mailed — it sends
-// nothing itself. Clicking it signs the user in and lands them on redirectTo
-// (reset-password.html), which picks the session up exactly as before.
-// redirectTo must still be in Auth > URL Configuration > Redirect URLs, or
-// Supabase falls back to the Site URL.
+// admin.generateLink({type: 'recovery'}) mints a one-time recovery token — it
+// sends nothing itself. The email links straight to reset-password.html with
+// ?token_hash=…, and that page redeems it with verifyOtp(). Not the
+// action_link (Supabase's /auth/v1/verify): that only redirects to URLs on
+// Auth > URL Configuration > Redirect URLs and otherwise drops the user on the
+// Site URL — the login page — with no way to set a password.
+//
+// redirectTo comes from the browser, so it is checked against
+// ALLOWED_RESET_ORIGINS: the token rides in that URL, and an arbitrary one
+// would let anyone mail a victim a link that hands their token to another site.
 //
 // Always answers 200 for a well-formed request, whether or not the address has
 // an account, so the endpoint can't be used to probe which emails are
@@ -21,6 +25,19 @@ import { esc, wrapEmail, sendMail, mailerConfigured } from '../_shared/mailer.ts
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const DEFAULT_RESET_URL = 'https://tbwctechnology.com/reset-password.html';
+const ALLOWED_RESET_ORIGINS = /^(https:\/\/(www\.)?tbwctechnology\.com|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+
+function resetPageUrl(redirectTo: unknown): URL {
+  try {
+    const url = new URL(typeof redirectTo === 'string' ? redirectTo : '');
+    if (ALLOWED_RESET_ORIGINS.test(url.origin) && url.pathname.endsWith('/reset-password.html')) {
+      return new URL(url.origin + url.pathname);
+    }
+  } catch { /* fall through */ }
+  return new URL(DEFAULT_RESET_URL);
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,27 +81,25 @@ serve(async (req) => {
 
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Enter a valid email address.' }, 400);
-  const redirectTo = typeof body.redirectTo === 'string' ? body.redirectTo : undefined;
-
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  const { data: linkData, error: linkError } = await sb.auth.admin.generateLink({
-    type: 'recovery',
-    email,
-    options: { redirectTo },
-  });
-  if (linkError || !linkData?.properties?.action_link || !linkData.user) {
+  const { data: linkData, error: linkError } = await sb.auth.admin.generateLink({ type: 'recovery', email });
+  if (linkError || !linkData?.properties?.hashed_token || !linkData.user) {
     // Usually "no such user" — same answer as success, see header.
-    console.log(`[send-password-reset] no link for ${email}: ${linkError?.message ?? 'no action_link'}`);
+    console.log(`[send-password-reset] no link for ${email}: ${linkError?.message ?? 'no hashed_token'}`);
     return json({ success: true }, 200);
   }
+
+  const link = resetPageUrl(body.redirectTo);
+  link.searchParams.set('token_hash', linkData.properties.hashed_token);
+  link.searchParams.set('type', 'recovery');
 
   const { data: profile } = await sb.from('users').select('first_name').eq('id', linkData.user.id).maybeSingle();
 
   try {
     const { subject, html } = resetEmail({
       firstName: profile?.first_name || '',
-      link: linkData.properties.action_link,
+      link: link.href,
     });
     const info = await sendMail(email, subject, html);
     console.log(`[send-password-reset] sent to ${email} — response=${info.response}`);
