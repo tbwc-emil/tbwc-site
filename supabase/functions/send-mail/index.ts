@@ -100,6 +100,17 @@ function inviteEmail(f: { firstName: string; link: string }) {
 // exist, no value here produces a From that customers should see.
 const DOCUMENT_FROM = Deno.env.get('DOCUMENT_FROM') || '"TBWC Accounting" <noreply@tbwcinc.com>';
 
+// A caller-chosen display name on DOCUMENT_FROM's own address (the validated
+// Brevo sender) — e.g. "TBWC" for account and notification emails, which are
+// not from Accounting. Quotes/angle brackets are stripped so the name can't
+// change the address.
+function documentSender(fromName: unknown): string {
+  const name = typeof fromName === 'string' ? fromName.replace(/["<>\r\n]/g, '').trim() : '';
+  if (!name) return DOCUMENT_FROM;
+  const address = DOCUMENT_FROM.match(/<([^>]+)>/)?.[1] ?? DOCUMENT_FROM;
+  return `"${name}" <${address}>`;
+}
+
 function documentEmail(f: { subject: string; bodyHtml: string }) {
   return { subject: f.subject, html: bareHtmlDocument(f.bodyHtml) };
 }
@@ -142,7 +153,7 @@ serve(async (req) => {
             contentType: body.attachmentContentType || 'application/pdf',
           }]
         : undefined;
-      const info = await sendMail(body.email, subject, html, attachments, DOCUMENT_FROM, body.cc || undefined, body.replyTo || undefined);
+      const info = await sendMail(body.email, subject, html, attachments, documentSender(body.fromName), body.cc || undefined, body.replyTo || undefined);
       console.log(`[send-mail] document sent — accepted=${JSON.stringify(info.accepted)} rejected=${JSON.stringify(info.rejected)} response=${info.response}`);
     } else {
       return json({ error: 'Unknown type' }, 400);
