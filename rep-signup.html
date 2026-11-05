@@ -38,6 +38,15 @@
       padding: 7px; margin: 0; cursor: pointer; color: var(--ink-3); border-radius: 7px; }
     .nr-pass-toggle:hover { color: var(--ink-2); }
     .nr-pass-toggle:focus-visible { outline: 2px solid var(--accent, #2A6FDB); outline-offset: 1px; }
+    /* Password rules checklist — same look as reset-password.html. */
+    .nr-rules { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-3); }
+    .nr-rules li { display: flex; align-items: center; gap: 8px; }
+    .nr-rules li::before {
+      content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%;
+      border: 1.5px solid var(--rule-2); box-sizing: border-box; }
+    .nr-rules li[data-met] { color: #1e7b45; }
+    .nr-rules li[data-met]::before {
+      border-color: #1e7b45; background: #1e7b45 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 9px no-repeat; }
     /* Tighten the stacked street-address lines. */
     #nr-address { gap: 8px; }
     #nr-address .nr-field { gap: 2px; }
@@ -107,6 +116,11 @@
               <input class="nr-input" id="nr-pass" type="password" name="password" minlength="8" required />
               <button type="button" class="nr-pass-toggle" data-pass-toggle="nr-pass" aria-label="Show password" aria-pressed="false"></button>
             </div>
+            <ul class="nr-rules" id="nr-rules">
+              <li data-rule="len">At least 8 characters</li>
+              <li data-rule="upper">One uppercase letter</li>
+              <li data-rule="num">One number</li>
+            </ul>
           </div>
           <div class="nr-field">
             <label for="nr-pass2">Confirm password <span class="req">*</span></label>
@@ -205,6 +219,24 @@
         msgEl.style.display = text ? 'block' : 'none';
       }
 
+      // Password rules, ticked off live as the user types (same as reset-password.html).
+      var RULES = {
+        len: function (p) { return p.length >= 8; },
+        upper: function (p) { return /[A-Z]/.test(p); },
+        num: function (p) { return /[0-9]/.test(p); },
+      };
+      var passInput = document.getElementById('nr-pass');
+      function checkRules() {
+        var ok = true;
+        Array.prototype.forEach.call(document.querySelectorAll('#nr-rules [data-rule]'), function (li) {
+          var met = RULES[li.getAttribute('data-rule')](passInput.value);
+          if (met) li.setAttribute('data-met', ''); else li.removeAttribute('data-met');
+          ok = ok && met;
+        });
+        return ok;
+      }
+      passInput.addEventListener('input', checkRules);
+
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (!form.reportValidity()) return;
@@ -212,6 +244,10 @@
 
         var f = function (n) { var el = form.elements[n]; return el ? el.value.trim() : ''; };
 
+        if (!checkRules()) {
+          showMsg('Password needs at least 8 characters, one uppercase letter and one number.');
+          return;
+        }
         if (f('password') !== f('password2')) {
           showMsg('Passwords do not match.');
           return;
