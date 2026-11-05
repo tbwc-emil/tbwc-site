@@ -109,10 +109,10 @@
   document.addEventListener('mousedown', function (e) {
     if (!drop.hidden && !ctaGroup.contains(e.target)) setDrop(false);
   });
-  function showMsg(text, isError) {
+  function showMsg(text, isError, isSuccess) {
     msgEl.textContent = text;
     msgEl.style.display = text ? 'block' : 'none';
-    msgEl.style.color = isError ? '#c0392b' : 'var(--ink-2)';
+    msgEl.style.color = isError ? '#c0392b' : isSuccess ? '#1e7b45' : 'var(--ink-2)';
   }
 
   function setForgotMode(on) {
@@ -135,10 +135,17 @@
     submitBtn.disabled = true;
 
     if (forgotMode) {
+      submitBtn.textContent = 'Sending…';
+      showMsg('', false);
       window.TBWCAuth.sendPasswordReset(email).then(function (res) {
         submitBtn.disabled = false;
+        submitBtn.textContent = 'Send reset email';
         if (res.error) { showMsg(res.error.message, true); return; }
-        showMsg('Check your email for a reset link.', false);
+        showMsg('If an account exists for ' + email + ', a reset link is on its way — check your inbox (and spam folder).', false, true);
+      }).catch(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send reset email';
+        showMsg('Could not send the reset email — please try again.', true);
       });
       return;
     }

@@ -10,8 +10,8 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Base URL for emailed links — verify-lead-email's redirect back to
-  // register.html, and password reset (still sent by Supabase's own
-  // mailer). Hardcoded to the prod domain (not window.location.href) so testing
+  // register.html, and password reset (send-password-reset's redirectTo).
+  // Hardcoded to the prod domain (not window.location.href) so testing
   // against the prod DB from localhost never mails a real user a dead
   // localhost link.
   var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -127,8 +127,21 @@
     });
   }
 
-  function sendPasswordReset(email) {
-    return sb.auth.resetPasswordForEmail(email, { redirectTo: linkUrl('reset-password.html') });
+  // Goes through the send-password-reset edge function (Brevo), not
+  // sb.auth.resetPasswordForEmail() — Supabase's built-in mailer only delivers
+  // to the project's team members, so reps never got the email.
+  // Returns { data } or { error: { message } } like the other helpers.
+  async function sendPasswordReset(email) {
+    var res = await sb.functions.invoke('send-password-reset', {
+      body: { email: email, redirectTo: linkUrl('reset-password.html') },
+    });
+    if (res.error) {
+      var body = res.error.context && res.error.context.json
+        ? await res.error.context.json().catch(function () { return {}; })
+        : {};
+      return { error: { message: body.error || 'Could not send the reset email — please try again.' } };
+    }
+    return { data: res.data };
   }
 
   function updatePassword(newPassword) {
