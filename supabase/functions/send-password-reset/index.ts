@@ -26,6 +26,11 @@ import { esc, wrapEmail, sendMail, mailerConfigured } from '../_shared/mailer.ts
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// Account mail comes from plain "TBWC" on a no-reply address, not the shared
+// default sender (jen@, which customers also see as "TBWC Accounting" on
+// invoices). Overridable by secret.
+const RESET_FROM = Deno.env.get('RESET_FROM') || '"TBWC" <noreply@tbwcinc.com>';
+
 const DEFAULT_RESET_URL = 'https://tbwctechnology.com/reset-password.html';
 const ALLOWED_RESET_ORIGINS = /^(https:\/\/(www\.)?tbwctechnology\.com|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
 
@@ -101,7 +106,15 @@ serve(async (req) => {
       firstName: profile?.first_name || '',
       link: link.href,
     });
-    const info = await sendMail(email, subject, html);
+    let info;
+    try {
+      info = await sendMail(email, subject, html, undefined, RESET_FROM);
+    } catch (err) {
+      // RESET_FROM not (yet) a validated Brevo sender — fall back to the
+      // default sender rather than leave the user without their link.
+      console.warn(`[send-password-reset] ${RESET_FROM} refused, using default sender:`, err instanceof Error ? err.message : err);
+      info = await sendMail(email, subject, html);
+    }
     console.log(`[send-password-reset] sent to ${email} — response=${info.response}`);
   } catch (err) {
     console.error('[send-password-reset] failed:', err instanceof Error ? err.stack ?? err.message : err);
