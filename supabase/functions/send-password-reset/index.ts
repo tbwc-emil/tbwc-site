@@ -26,10 +26,9 @@ import { esc, wrapEmail, sendMail, mailerConfigured } from '../_shared/mailer.ts
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// Account mail comes from plain "TBWC" on a no-reply address, not the shared
-// default sender (jen@, which customers also see as "TBWC Accounting" on
-// invoices). Overridable by secret.
-const RESET_FROM = Deno.env.get('RESET_FROM') || '"TBWC" <noreply@tbwcinc.com>';
+// Account mail comes from jen@ under the plain name "TBWC" (invoices use the
+// same address as "TBWC Accounting"). Overridable by secret.
+const RESET_FROM = Deno.env.get('RESET_FROM') || '"TBWC" <jen@tbwcinc.com>';
 
 const DEFAULT_RESET_URL = 'https://tbwctechnology.com/reset-password.html';
 const ALLOWED_RESET_ORIGINS = /^(https:\/\/(www\.)?tbwctechnology\.com|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
