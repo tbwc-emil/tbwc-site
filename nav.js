@@ -141,7 +141,7 @@
         submitBtn.disabled = false;
         submitBtn.textContent = 'Send reset email';
         if (res.error) { showMsg(res.error.message, true); return; }
-        showMsg('If an account exists for ' + email + ', a reset link is on its way — check your inbox (and spam folder).', false, true);
+        showMsg('Email sent! Check your inbox for a link to reset your password.', false, true);
       }).catch(function () {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Send reset email';
