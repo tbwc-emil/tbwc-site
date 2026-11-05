@@ -113,6 +113,8 @@
     msgEl.textContent = text;
     msgEl.style.display = text ? 'block' : 'none';
     msgEl.style.color = isError ? '#c0392b' : isSuccess ? '#1e7b45' : 'var(--ink-2)';
+    msgEl.style.fontSize = isSuccess ? '14px' : '12px';
+    msgEl.style.fontWeight = isSuccess ? '500' : '';
   }
 
   function setForgotMode(on) {
