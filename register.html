@@ -106,8 +106,8 @@
         msgEl.style.display = text ? 'block' : 'none';
       }
 
-      // Landing back here from the verify-your-email link (verify-lead-email
-      // redirects to ?verify=ok or ?verify=invalid).
+      // Landing back here from the verify-your-email link (the portal API's
+      // /public/rep/leads/verify redirects to ?verify=ok or ?verify=invalid).
       var verify = new URLSearchParams(window.location.search).get('verify');
       if (verify === 'ok') {
         var doneEl = document.getElementById('nr-done');

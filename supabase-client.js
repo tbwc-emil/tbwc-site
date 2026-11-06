@@ -9,8 +9,8 @@
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Base URL for emailed links — verify-lead-email's redirect back to
-  // register.html, and password reset (send-password-reset's redirectTo).
+  // Base URL for emailed links — the portal API's verify redirect back to
+  // register.html, and password reset (its redirectTo).
   // Hardcoded to the prod domain (not window.location.href) so testing
   // against the prod DB from localhost never mails a real user a dead
   // localhost link.
@@ -98,7 +98,7 @@
   // Goes through the portal API's /public/rep/signup (service role + admin create user)
   // instead of sb.auth.signUp() — creates an already-confirmed account directly,
   // no confirmation email at this step. The applicant already proved they control
-  // the address back at the inquiry stage (verify-lead-email); this is just the
+  // the address back at the inquiry stage (the emailed verify link); this is just the
   // detail form behind an unguessable invite link mailed to that same address.
   // The users profile row is created in the same call — no client insert needed.
   // Caller should sign in right after a successful result (see signIn above) —
