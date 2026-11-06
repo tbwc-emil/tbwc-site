@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "db:test": "node scripts/db-test.js",
-    "db:schema": "node scripts/apply-schema.js",
     "rep:approve": "node scripts/approve-rep.js"
   },
   "dependencies": {
