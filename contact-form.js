@@ -1,9 +1,9 @@
 /* Contact Us modal — posts to the TBWC Worker's public /api/contact route,
    which files an ordinary (anonymous) support ticket and emails the visitor
    a confirmation + the admin team a heads-up (see TBWC/api/worker/routes/contact.ts).
-   Opened by any element with [data-contact-form] (nav.js's "Contact" link,
-   footer.js's "Technical Support" link) — those keep a plain mailto/anchor
-   href as a no-JS fallback. Plain JS, no framework, same pattern as nav.js/footer.js. */
+   Opened by any element with [data-contact-form] (footer.js's "Technical
+   Support" and "Send us a message" links) — those keep a plain mailto href
+   as a no-JS fallback. Loaded on the pages that have the footer. Plain JS, no framework, same pattern as nav.js/footer.js. */
 (function () {
   'use strict';
 
@@ -57,9 +57,12 @@
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var name = form.name.value.trim();
-      var email = form.email.value.trim();
-      var message = form.message.value.trim();
+      // form.elements, not form.name: a form's own `name` property shadows
+      // the field of that name.
+      var fields = form.elements;
+      var name = fields.namedItem('name').value.trim();
+      var email = fields.namedItem('email').value.trim();
+      var message = fields.namedItem('message').value.trim();
       if (!name || !email || !message) return;
 
       submitBtn.disabled = true;
@@ -69,7 +72,7 @@
       fetch(API_BASE + '/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, email: email, message: message, company: form.company.value }),
+        body: JSON.stringify({ name: name, email: email, message: message, company: fields.namedItem('company').value }),
       })
         .then(function (res) { return res.json().then(function (json) { return { ok: res.ok, json: json }; }); })
         .then(function (r) {

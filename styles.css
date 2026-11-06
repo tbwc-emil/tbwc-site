@@ -1694,6 +1694,7 @@ h1, h2, h3, h4 {
   padding: 24px;
   animation: overlay-in .25s ease;
 }
+.modal-overlay[hidden] { display: none; }
 @keyframes overlay-in {
   from { opacity: 0; }
   to { opacity: 1; }

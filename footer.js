@@ -29,7 +29,7 @@
           '<div class="foot__col">' +
             '<h4>Support</h4>' +
             '<ul>' +
-              '<li><a href="mailto:info@TBWCinc.com?subject=Tech%20Support%20-">Technical Support</a></li>' +
+              '<li><a href="mailto:info@TBWCinc.com?subject=Tech%20Support%20-" data-contact-form>Technical Support</a></li>' +
             '</ul>' +
           '</div>' +
           '<div class="foot__col">' +
@@ -52,6 +52,7 @@
             '<ul>' +
               '<li><a href="tel:8885621810" style="display:flex;align-items:center;gap:8px">' + phoneIcon + '(888) 562-1810</a></li>' +
               '<li><a href="mailto:info@TBWCinc.com" style="display:flex;align-items:center;gap:8px">' + emailIcon + 'info@TBWCinc.com</a></li>' +
+              '<li><a href="mailto:info@TBWCinc.com" data-contact-form>Send us a message</a></li>' +
             '</ul>' +
           '</div>' +
         '</div>' +
