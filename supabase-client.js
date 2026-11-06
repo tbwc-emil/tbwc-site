@@ -127,21 +127,12 @@
     });
   }
 
-  // Goes through the send-password-reset edge function (Brevo), not
-  // sb.auth.resetPasswordForEmail() — Supabase's built-in mailer only delivers
-  // to the project's team members, so reps never got the email.
+  // Goes through the portal API (/public/rep/password-reset), which mails the
+  // link itself — not sb.auth.resetPasswordForEmail(), whose built-in mailer
+  // only delivers to the project's team members, so reps never got the email.
   // Returns { data } or { error: { message } } like the other helpers.
-  async function sendPasswordReset(email) {
-    var res = await sb.functions.invoke('send-password-reset', {
-      body: { email: email, redirectTo: linkUrl('reset-password.html') },
-    });
-    if (res.error) {
-      var body = res.error.context && res.error.context.json
-        ? await res.error.context.json().catch(function () { return {}; })
-        : {};
-      return { error: { message: body.error || 'Could not send the reset email — please try again.' } };
-    }
-    return { data: res.data };
+  function sendPasswordReset(email) {
+    return publicApi('/password-reset', { email: email, redirectTo: linkUrl('reset-password.html') });
   }
 
   function updatePassword(newPassword) {
