@@ -32,6 +32,7 @@
           '<form id="contact-form" style="display:flex;flex-direction:column;gap:18px">' +
             '<div class="field"><label for="contact-name">Name</label><input id="contact-name" name="name" required maxlength="200" /></div>' +
             '<div class="field"><label for="contact-email">Email</label><input id="contact-email" name="email" type="email" required maxlength="200" /></div>' +
+            '<div class="field"><label for="contact-phone">Phone</label><input id="contact-phone" name="phone" type="tel" autocomplete="tel" required maxlength="30" /></div>' +
             '<div class="field"><label for="contact-message">Message</label><textarea id="contact-message" name="message" rows="4" required maxlength="2000" style="appearance:none;border:0;border-bottom:var(--rule-w) solid var(--rule-2);background:transparent;padding:10px 0;font:inherit;font-size:16px;color:var(--ink);outline:none;resize:vertical"></textarea></div>' +
             // Honeypot — hidden from real visitors via CSS (not `hidden`/`display:none`,
             // which some bots skip filling), never a real field a screen reader visits.
@@ -62,8 +63,9 @@
       var fields = form.elements;
       var name = fields.namedItem('name').value.trim();
       var email = fields.namedItem('email').value.trim();
+      var phone = fields.namedItem('phone').value.trim();
       var message = fields.namedItem('message').value.trim();
-      if (!name || !email || !message) return;
+      if (!name || !email || !phone || !message) return;
 
       submitBtn.disabled = true;
       statusEl.textContent = '';
@@ -72,7 +74,7 @@
       fetch(API_BASE + '/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, email: email, message: message, company: fields.namedItem('company').value }),
+        body: JSON.stringify({ name: name, email: email, phone: phone, message: message, company: fields.namedItem('company').value }),
       })
         .then(function (res) { return res.json().then(function (json) { return { ok: res.ok, json: json }; }); })
         .then(function (r) {
